@@ -4,128 +4,137 @@
  */
 
 class RealAIHandler {
-    constructor() {
-        // Initialize from localStorage if available; fallback to placeholders
-        const savedKey = localStorage.getItem('openrouter_api_key');
-        const savedModel = localStorage.getItem('openrouter_model') || 'google/gemini-2.5-pro';
+  constructor() {
+    // Initialize from localStorage if available; fallback to placeholders
+    const savedKey = localStorage.getItem("openrouter_api_key");
+    const savedModel =
+      localStorage.getItem("openrouter_model") || "google/gemini-2.5-pro";
 
-        this.apiKey = savedKey || 'YOUR_OPENROUTER_API_KEY';
-        this.baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-        this.model = savedModel;
-        this.siteUrl = 'http://localhost'; // Your site URL
-        this.siteName = 'AI E-Learning Platform'; // Your site name
+    this.apiKey = savedKey || "YOUR_OPENROUTER_API_KEY";
+    this.baseUrl = "https://openrouter.ai/api/v1/chat/completions";
+    this.model = savedModel;
+    this.siteUrl = "http://localhost"; // Your site URL
+    this.siteName = "AI E-Learning Platform"; // Your site name
+  }
+
+  /**
+   * Make API call to OpenRouter
+   * @param {Array} messages - Array of message objects
+   * @returns {Promise<string>} - AI response
+   */
+  async makeAPICall(messages) {
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "HTTP-Referer": this.siteUrl,
+          "X-Title": this.siteName,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages: messages,
+          temperature: 0.7,
+          max_tokens: 2000,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `API call failed: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content;
+    } catch (error) {
+      console.error("AI API Error:", error);
+      throw new Error(`AI API call failed: ${error.message}`);
     }
+  }
 
-    /**
-     * Make API call to OpenRouter
-     * @param {Array} messages - Array of message objects
-     * @returns {Promise<string>} - AI response
-     */
-    async makeAPICall(messages) {
-        try {
-            const response = await fetch(this.baseUrl, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.apiKey}`,
-                    'HTTP-Referer': this.siteUrl,
-                    'X-Title': this.siteName,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: this.model,
-                    messages: messages,
-                    temperature: 0.7,
-                    max_tokens: 2000
-                })
-            });
+  /**
+   * Summarize documents with real AI
+   * @param {Array} documents - Array of document objects with content and filename
+   * @returns {Promise<string>} - Summarized content
+   */
+  async summarizeDocuments(documents) {
+    const documentTexts = documents
+      .map((doc) => `Document: ${doc.filename}\nContent: ${doc.content}`)
+      .join("\n\n---\n\n");
 
-            if (!response.ok) {
-                throw new Error(`API call failed: ${response.status} ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            return data.choices[0].message.content;
-        } catch (error) {
-            console.error('AI API Error:', error);
-            throw new Error(`AI API call failed: ${error.message}`);
-        }
-    }
-
-    /**
-     * Summarize documents with real AI
-     * @param {Array} documents - Array of document objects with content and filename
-     * @returns {Promise<string>} - Summarized content
-     */
-    async summarizeDocuments(documents) {
-        const documentTexts = documents.map(doc => 
-            `Document: ${doc.filename}\nContent: ${doc.content}`
-        ).join('\n\n---\n\n');
-
-        const messages = [{
-            role: 'user',
-            content: `Please summarize the following documents for a Hong Kong student. Provide a comprehensive summary that captures the key points from all documents. If there are multiple documents, please cite which document each point comes from using the format [Document: filename].
+    const messages = [
+      {
+        role: "user",
+        content: `Please summarize the following documents for a Hong Kong student. Provide a comprehensive summary that captures the key points from all documents. If there are multiple documents, please cite which document each point comes from using the format [Document: filename].
 
 Documents to summarize:
 ${documentTexts}
 
-Please provide a well-structured summary that a student can use to understand the main concepts and key points from all the uploaded materials.`
-        }];
+Please provide a well-structured summary that a student can use to understand the main concepts and key points from all the uploaded materials.`,
+      },
+    ];
 
-        return await this.makeAPICall(messages);
-    }
+    return await this.makeAPICall(messages);
+  }
 
-    /**
-     * Explain content with real AI
-     * @param {string} content - Content to explain
-     * @param {string} selectedText - Specific text selected for explanation (optional)
-     * @returns {Promise<string>} - Explanation
-     */
-    async explainContent(content, selectedText = null) {
-        let prompt;
-        
-        if (selectedText) {
-            prompt = `Please explain the following selected text to a Hong Kong student who is learning this topic for the first time. Assume they have no prior knowledge of this subject and explain it in simple, clear terms with examples if helpful.
+  /**
+   * Explain content with real AI
+   * @param {string} content - Content to explain
+   * @param {string} selectedText - Specific text selected for explanation (optional)
+   * @returns {Promise<string>} - Explanation
+   */
+  async explainContent(content, selectedText = null) {
+    let prompt;
+
+    if (selectedText) {
+      prompt = `Please explain the following selected text to a Hong Kong student who is learning this topic for the first time. Assume they have no prior knowledge of this subject and explain it in simple, clear terms with examples if helpful.
 
 Selected text to explain: "${selectedText}"
 
 Context (full document): ${content.substring(0, 1000)}...
 
 Please provide a clear, beginner-friendly explanation.`;
-        } else {
-            prompt = `Please explain the following content to a Hong Kong student who is learning this topic for the first time. Break it down into main topics and explain each one clearly. Assume they have no prior knowledge of this subject.
+    } else {
+      prompt = `Please explain the following content to a Hong Kong student who is learning this topic for the first time. Break it down into main topics and explain each one clearly. Assume they have no prior knowledge of this subject.
 
 Content to explain: ${content}
 
 Please provide a structured explanation with clear headings for each main topic.`;
-        }
-
-        const messages = [{
-            role: 'user',
-            content: prompt
-        }];
-
-        return await this.makeAPICall(messages);
     }
 
-    /**
-     * Generate exercises with real AI (legacy method - kept for compatibility)
-     * @param {string} content - Content to generate exercises from
-     * @param {string} questionType - Type of questions (MC, Short, Long, Essay)
-     * @returns {Promise<Object>} - Object with questions and solutions
-     */
-    async generateExercises(content, questionType) {
-        const typeInstructions = {
-            'MC': 'multiple choice questions with 4 options each',
-            'Short': 'short answer questions that can be answered in 1-2 sentences',
-            'Long': 'long answer questions requiring detailed explanations',
-            'Essay': 'essay questions requiring comprehensive analysis'
-        };
+    const messages = [
+      {
+        role: "user",
+        content: prompt,
+      },
+    ];
 
-        const instruction = typeInstructions[questionType] || 'mixed question types';
+    return await this.makeAPICall(messages);
+  }
 
-        const messages = [{
-            role: 'user',
-            content: `Based on the following content, generate practice exercises for a Hong Kong student. Create ${instruction}.
+  /**
+   * Generate exercises with real AI (legacy method - kept for compatibility)
+   * @param {string} content - Content to generate exercises from
+   * @param {string} questionType - Type of questions (MC, Short, Long, Essay)
+   * @returns {Promise<Object>} - Object with questions and solutions
+   */
+  async generateExercises(content, questionType) {
+    const typeInstructions = {
+      MC: "multiple choice questions with 4 options each",
+      Short: "short answer questions that can be answered in 1-2 sentences",
+      Long: "long answer questions requiring detailed explanations",
+      Essay: "essay questions requiring comprehensive analysis",
+    };
+
+    const instruction =
+      typeInstructions[questionType] || "mixed question types";
+
+    const messages = [
+      {
+        role: "user",
+        content: `Based on the following content, generate practice exercises for a Hong Kong student. Create ${instruction}.
 
 Content: ${content}
 
@@ -140,84 +149,123 @@ QUESTIONS:
 SOLUTIONS:
 [Provide detailed solutions for each question]
 
-Make sure the questions test understanding of the key concepts and are appropriate for the student's learning level.`
-        }];
+Make sure the questions test understanding of the key concepts and are appropriate for the student's learning level.`,
+      },
+    ];
 
-        const response = await this.makeAPICall(messages);
-        
-        // Split the response into questions and solutions
-        const parts = response.split('SOLUTIONS:');
-        const questions = parts[0].replace('QUESTIONS:', '').trim();
-        const solutions = parts[1] ? parts[1].trim() : 'Solutions not properly formatted';
+    const response = await this.makeAPICall(messages);
 
-        return {
-            questions: questions,
-            solutions: solutions
-        };
-    }
+    // Split the response into questions and solutions
+    const parts = response.split("SOLUTIONS:");
+    const questions = parts[0].replace("QUESTIONS:", "").trim();
+    const solutions = parts[1]
+      ? parts[1].trim()
+      : "Solutions not properly formatted";
 
-    /**
-     * Generate ONLY questions with real AI (no answers/solutions)
-     * @param {string} content - Content to generate exercises from
-     * @param {string} questionType - Type of questions (MC, Short, Long, Essay)
-     * @returns {Promise<string>} - Questions only
-     */
-    async generateQuestionsOnly(content, questionType) {
-        const typeInstructions = {
-            'MC': 'multiple choice questions with 4 options each (A, B, C, D)',
-            'Short': 'short answer questions that can be answered in 1-2 sentences',
-            'Long': 'long answer questions requiring detailed explanations',
-            'Essay': 'essay questions requiring comprehensive analysis'
-        };
+    return {
+      questions: questions,
+      solutions: solutions,
+    };
+  }
 
-        const instruction = typeInstructions[questionType] || 'mixed question types';
+  /**
+   * Generate ONLY questions with real AI (no answers/solutions)
+   * @param {string} content - Content to generate exercises from
+   * @param {string} questionType - Type of questions (MC, Short, Long, Essay)
+   * @returns {Promise<string>} - Questions only
+   */
+  async generateQuestionsOnly(content, questionType, questionCount = 5) {
+    const typeInstructions = {
+      "multiple-choice":
+        "multiple choice questions with exactly 4 options each (A, B, C, D)",
+      "short-answer":
+        "short answer questions that can be answered in 1-2 sentences",
+      "long-answer": "long answer questions requiring detailed explanations",
+      essay: "essay questions requiring comprehensive analysis",
+    };
 
-        const messages = [{
-            role: 'system',
-            content: `You are an educational content generator. Your task is to create ONLY practice questions for students. 
+    const instruction =
+      typeInstructions[questionType] || "mixed question types";
+
+    let systemPrompt = `You are an educational content generator. Your task is to create ONLY practice questions for students.
 
 CRITICAL INSTRUCTIONS:
 - Generate ONLY questions, NO answers, NO solutions, NO hints
 - Do NOT include any form of answers or solutions in your response
 - Do NOT provide explanations or correct answers
 - Focus solely on creating well-structured questions
-- Number each question clearly
-- For multiple choice questions, provide only the options (A, B, C, D) without indicating which is correct`
-        }, {
-            role: 'user',
-            content: `Based on the following content, generate practice questions for a Hong Kong student. Create ${instruction}.
+- Number each question clearly`;
+
+    let userPrompt = `Based on the following content, generate practice questions for a Hong Kong student. Create ${instruction}.
 
 Content: ${content}
 
-Generate 5-8 well-structured questions that test understanding of the key concepts. Make sure the questions are appropriate for the student's learning level.
+Generate exactly ${questionCount} well-structured questions that test understanding of the key concepts. Make sure the questions are appropriate for the student's learning level.
 
-REMEMBER: Provide ONLY the questions. Do NOT include any answers, solutions, or hints.`
-        }];
+REMEMBER: Provide ONLY the questions. Do NOT include any answers, solutions, or hints.`;
 
-        return await this.makeAPICall(messages);
+    // Special instructions for multiple choice questions
+    if (questionType === "multiple-choice") {
+      systemPrompt += `
+            
+MULTIPLE CHOICE SPECIFIC INSTRUCTIONS:
+- Each question MUST have exactly 4 options labeled A, B, C, D
+- ALL questions must be in multiple choice format
+- Do NOT mix with other question types
+- Format each question as:
+  Question X: [question text]
+  A) [option A]
+  B) [option B] 
+  C) [option C]
+  D) [option D]
+- Do NOT indicate which option is correct`;
+
+      userPrompt = `Based on the following content, generate ONLY multiple choice questions for a Hong Kong student. Each question must have exactly 4 options (A, B, C, D).
+
+Content: ${content}
+
+Generate exactly ${questionCount} multiple choice questions that test understanding of the key concepts. Make sure ALL questions follow the exact multiple choice format with 4 options each.
+
+CRITICAL: Generate ONLY multiple choice questions. Do NOT include any other question types.`;
     }
 
-    /**
-     * Generate ONLY solutions for previously generated questions
-     * @param {string} questions - The questions to generate solutions for
-     * @param {string} content - Original content for context
-     * @returns {Promise<string>} - Solutions only
-     */
-    async generateSolutionsOnly(questions, content) {
-        const messages = [{
-            role: 'system',
-            content: `You are an educational content generator. Your task is to provide ONLY detailed solutions and answers to the given questions.
+    const messages = [
+      {
+        role: "system",
+        content: systemPrompt,
+      },
+      {
+        role: "user",
+        content: userPrompt,
+      },
+    ];
 
-CRITICAL INSTRUCTIONS:
-- Provide ONLY solutions and answers
-- Do NOT repeat the questions in your response
-- Number each solution to match the question numbers
-- Provide detailed explanations for each answer
-- For multiple choice questions, clearly state the correct answer (e.g., "Answer: B") and explain why
-- Make solutions comprehensive and educational`
-        }, {
-            role: 'user',
-            content: `Provide detailed solutions for the following questions based on the given content.
+    return await this.makeAPICall(messages);
+  }
+
+  /**
+   * Generate solutions with questions for better formatting
+   * @param {string} questions - The questions to generate solutions for
+   * @param {string} content - Original content for context
+   * @returns {Promise<string>} - Solutions with questions included
+   */
+  async generateSolutionsOnly(questions, content) {
+    const messages = [
+      {
+        role: "system",
+        content: `You are an educational content generator. Your task is to provide detailed solutions with proper formatting.
+
+CRITICAL FORMATTING INSTRUCTIONS:
+- Include each question followed by its solution
+- Use clear headers and proper spacing
+- For multiple choice questions: show question, all options, then indicate correct answer with explanation
+- Format as: Question → Answer → Detailed Explanation
+- Use markdown-style formatting for better readability
+- Make solutions comprehensive and educational`,
+      },
+      {
+        role: "user",
+        content: `Provide detailed solutions for the following questions based on the given content. Include each question with its complete solution and explanation.
 
 Questions:
 ${questions}
@@ -225,62 +273,74 @@ ${questions}
 Original Content (for context):
 ${content}
 
-Generate comprehensive solutions that explain the reasoning behind each answer. For multiple choice questions, clearly indicate the correct answer and explain why it's correct and why other options are incorrect.
+FORMAT REQUIREMENTS:
+1. Show the complete question first
+2. Provide the answer/correct option
+3. Give detailed explanation
+4. Use clear section breaks between questions
+5. For multiple choice: explain why the correct answer is right and why others are wrong
 
-REMEMBER: Provide ONLY the solutions. Do NOT repeat the questions.`
-        }];
+Generate well-formatted solutions that students can easily follow and understand.`,
+      },
+    ];
 
-        return await this.makeAPICall(messages);
-    }
+    return await this.makeAPICall(messages);
+  }
 
-    /**
-     * Handle follow-up questions with real AI
-     * @param {string} selectedText - Text that was selected
-     * @param {string} question - User's follow-up question
-     * @param {string} context - Document context
-     * @returns {Promise<string>} - AI response
-     */
-    async handleFollowUpQuestion(selectedText, question, context) {
-        const messages = [{
-            role: 'user',
-            content: `A Hong Kong student has selected this text: "${selectedText}" and asked: "${question}"
+  /**
+   * Handle follow-up questions with real AI
+   * @param {string} selectedText - Text that was selected
+   * @param {string} question - User's follow-up question
+   * @param {string} context - Document context
+   * @returns {Promise<string>} - AI response
+   */
+  async handleFollowUpQuestion(selectedText, question, context) {
+    const messages = [
+      {
+        role: "user",
+        content: `A Hong Kong student has selected this text: "${selectedText}" and asked: "${question}"
 
 Document context: ${context.substring(0, 800)}...
 
-Please provide a helpful answer to their question, keeping in mind they are learning this material. Be clear and educational in your response.`
-        }];
+Please provide a helpful answer to their question, keeping in mind they are learning this material. Be clear and educational in your response.`,
+      },
+    ];
 
-        return await this.makeAPICall(messages);
-    }
+    return await this.makeAPICall(messages);
+  }
 
-    /**
-     * Check if API key is configured
-     * @returns {boolean} - True if API key is set
-     */
-    isConfigured() {
-        return this.apiKey && this.apiKey !== 'YOUR_OPENROUTER_API_KEY';
-    }
+  /**
+   * Check if API key is configured
+   * @returns {boolean} - True if API key is set
+   */
+  isConfigured() {
+    return this.apiKey && this.apiKey !== "YOUR_OPENROUTER_API_KEY";
+  }
 
-    /**
-     * Set API key
-     * @param {string} apiKey - OpenRouter API key
-     */
-    setApiKey(apiKey) {
-        this.apiKey = apiKey;
-        // persist for future sessions
-        try { localStorage.setItem('openrouter_api_key', apiKey); } catch (_) {}
-    }
+  /**
+   * Set API key
+   * @param {string} apiKey - OpenRouter API key
+   */
+  setApiKey(apiKey) {
+    this.apiKey = apiKey;
+    // persist for future sessions
+    try {
+      localStorage.setItem("openrouter_api_key", apiKey);
+    } catch (_) {}
+  }
 
-    /**
-     * Set model id and persist
-     * @param {string} modelId
-     */
-    setModel(modelId) {
-        if (modelId && typeof modelId === 'string') {
-            this.model = modelId;
-            try { localStorage.setItem('openrouter_model', modelId); } catch (_) {}
-        }
+  /**
+   * Set model id and persist
+   * @param {string} modelId
+   */
+  setModel(modelId) {
+    if (modelId && typeof modelId === "string") {
+      this.model = modelId;
+      try {
+        localStorage.setItem("openrouter_model", modelId);
+      } catch (_) {}
     }
+  }
 }
 
 // Export for use in other modules

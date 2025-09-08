@@ -31,8 +31,17 @@ class App {
     this.initializeEventListeners();
     this.loadStoredData();
     this.setupInitialState();
+    this.setDefaultQuestionLimits();
 
     console.log("AI E-Learning Platform initialized successfully");
+  }
+
+  /**
+   * Set default question limits on page load
+   */
+  setDefaultQuestionLimits() {
+    // Set default to multiple choice limits
+    this.updateQuestionLimits("multiple-choice");
   }
 
   /**
@@ -94,12 +103,102 @@ class App {
         exerciseTypeBtns.forEach((b) => b.classList.remove("selected"));
         // Add selection to clicked button
         btn.classList.add("selected");
+
+        // Update question count limits based on exercise type
+        this.updateQuestionLimits(btn.dataset.type);
       });
     });
 
     if (generateBtn) {
       generateBtn.addEventListener("click", () => this.generateExercises());
     }
+  }
+
+  /**
+   * Update question count limits based on exercise type
+   */
+  updateQuestionLimits(exerciseType) {
+    const questionCountInput = document.getElementById("questionCount");
+    const questionLimitHint = document.getElementById("questionLimitHint");
+
+    if (!questionCountInput || !questionLimitHint) return;
+
+    // Define limits for each exercise type
+    const limits = {
+      "multiple-choice": {
+        min: 5,
+        max: 20,
+        default: 5,
+        text: "(5-20 questions)",
+      },
+      "short-answer": { min: 5, max: 10, default: 5, text: "(5-10 questions)" },
+      "long-answer": { min: 1, max: 3, default: 2, text: "(1-3 questions)" },
+      essay: { min: 1, max: 1, default: 1, text: "(1 question)" },
+    };
+
+    const limit = limits[exerciseType];
+    if (limit) {
+      // Update input attributes
+      questionCountInput.min = limit.min;
+      questionCountInput.max = limit.max;
+      questionCountInput.value = limit.default;
+
+      // Update hint text
+      questionLimitHint.textContent = limit.text;
+
+      // Validate current value
+      const currentValue = parseInt(questionCountInput.value);
+      if (currentValue < limit.min) {
+        questionCountInput.value = limit.min;
+      } else if (currentValue > limit.max) {
+        questionCountInput.value = limit.max;
+      }
+    }
+  }
+
+  /**
+   * Validate question count based on exercise type limits
+   */
+  validateQuestionCount(exerciseType, count) {
+    const limits = {
+      "multiple-choice": { min: 5, max: 20 },
+      "short-answer": { min: 5, max: 10 },
+      "long-answer": { min: 1, max: 3 },
+      essay: { min: 1, max: 1 },
+    };
+
+    const limit = limits[exerciseType];
+    if (!limit) {
+      this.showError("Invalid exercise type");
+      return false;
+    }
+
+    if (count < limit.min) {
+      this.showError(
+        `${this.capitalizeFirst(exerciseType)} exercises require at least ${
+          limit.min
+        } question${limit.min > 1 ? "s" : ""}.`
+      );
+      return false;
+    }
+
+    if (count > limit.max) {
+      this.showError(
+        `${this.capitalizeFirst(exerciseType)} exercises can have at most ${
+          limit.max
+        } question${limit.max > 1 ? "s" : ""}.`
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Capitalize first letter of string and replace hyphens
+   */
+  capitalizeFirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1).replace("-", " ");
   }
 
   /**
@@ -484,6 +583,11 @@ class App {
 
     const exerciseType = selectedType.dataset.type;
     const count = questionCount ? parseInt(questionCount.value) : 5;
+
+    // Validate question count based on exercise type limits
+    if (!this.validateQuestionCount(exerciseType, count)) {
+      return;
+    }
 
     try {
       const files = window.fileHandler.getAllFilesContent();
