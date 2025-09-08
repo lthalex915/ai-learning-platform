@@ -9,6 +9,8 @@ class ChatInterface {
         this.currentSession = null;
         this.messages = [];
         this.selectedText = '';
+        this.sessions = []; // multi-chat sessions
+        this.associatedDocId = null; // associate chat with a document
         
         this.initializeChat();
         this.initializeEventListeners();
@@ -26,9 +28,42 @@ class ChatInterface {
         
         // Create chat toggle button for mobile
         this.createChatToggle();
+
+        // Add New Chat button in header if not exists
+        const chatHeader = this.chatPanel ? this.chatPanel.querySelector('.chat-header') : null;
+        if (chatHeader && !chatHeader.querySelector('#newChatBtn')) {
+            const newBtn = document.createElement('button');
+            newBtn.id = 'newChatBtn';
+            newBtn.className = 'new-chat-btn';
+            newBtn.title = 'Start New Chat';
+            newBtn.innerHTML = '<i class="fas fa-plus"></i>';
+            chatHeader.insertBefore(newBtn, chatHeader.querySelector('#closeChatBtn'));
+            newBtn.addEventListener('click', () => this.createNewSession(true));
+        }
+
+        // Create sessions dropdown
+        if (chatHeader && !chatHeader.querySelector('#chatSessionSelect')) {
+            const select = document.createElement('select');
+            select.id = 'chatSessionSelect';
+            select.className = 'chat-session-select';
+            select.title = 'Switch Chat Session';
+            chatHeader.insertBefore(select, chatHeader.querySelector('#newChatBtn'));
+            select.addEventListener('change', (e) => this.switchSession(e.target.value));
+        }
+
+        // Add clear chat button
+        if (chatHeader && !chatHeader.querySelector('#clearChatBtn')) {
+            const clearBtn = document.createElement('button');
+            clearBtn.id = 'clearChatBtn';
+            clearBtn.className = 'clear-chat-btn';
+            clearBtn.title = 'Clear Current Chat';
+            clearBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            chatHeader.insertBefore(clearBtn, chatHeader.querySelector('#closeChatBtn'));
+            clearBtn.addEventListener('click', () => this.clearCurrentChat());
+        }
         
-        // Load existing chat session if available
-        this.loadChatSession();
+        // Load existing chat session(s) if available
+        this.loadChatSessions();
     }
 
     /**
@@ -62,6 +97,16 @@ class ChatInterface {
         if (this.chatToggle) {
             this.chatToggle.addEventListener('click', () => this.toggleChat());
         }
+        
+        // When document changes, associate doc id to current session
+        document.addEventListener('document:displayed', (e) => {
+            this.associatedDocId = e.detail && e.detail.id ? e.detail.id : null;
+            if (this.currentSession) {
+                this.currentSession.docId = this.associatedDocId;
+                this.saveChatSession();
+                this.refreshSessionSelect();
+            }
+        });
 
         // Handle mobile menu toggle
         this.handleMobileMenuToggle();
@@ -106,8 +151,9 @@ class ChatInterface {
     /**
      * Open chat with selected text
      */
-    openChatWithSelectedText(selectedText) {
+    openChatWithSelectedText(selectedText, docId = null) {
         this.selectedText = selectedText;
+        this.associatedDocId = docId || this.associatedDocId || (window.documentEditor && window.documentEditor.getCurrentDocument && window.documentEditor.getCurrentDocument() ? window.documentEditor.getCurrentDocument().id : null);
         this.openChat();
         
         // Pre-fill input with context
@@ -155,6 +201,7 @@ class ChatInterface {
         if (!this.currentSession) {
             this.createNewSession();
         }
+        this.refreshSessionSelect();
     }
 
     /**
@@ -260,6 +307,7 @@ class ChatInterface {
         
         // Save session
         this.saveChatSession();
+        this.refreshSessionSelect();
     }
 
     /**
@@ -501,62 +549,87 @@ What would you like to explore from your study materials?`;
     /**
      * Create new chat session
      */
-    createNewSession() {
+    createNewSession(forceNew = false) {
+        // If not forced and there's an existing session, reuse if empty
+        if (!forceNew && this.currentSession && (this.messages?.length ?? 0) <= 1) {
+            return;
+        }
+        
+        const doc = window.documentEditor && window.documentEditor.getCurrentDocument ? window.documentEditor.getCurrentDocument() : null;
+        const timestamp = new Date().toISOString();
+        
         this.currentSession = {
             id: storageManager.generateId(),
-            title: 'Chat Session',
+            title: doc ? `Chat: ${doc.title.substring(0, 30)}${doc.title.length > 30 ? '...' : ''}` : `New Chat ${new Date().toLocaleTimeString()}`,
+            docId: doc ? doc.id : this.associatedDocId || null,
             messages: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            createdAt: timestamp,
+            updatedAt: timestamp
         };
         
         this.messages = [];
+        
+        // Clear chat display
+        if (this.chatMessages) {
+            this.chatMessages.innerHTML = '';
+        }
         
         // Add welcome message
         const welcomeMessage = {
             id: this.generateMessageId(),
             type: 'ai',
-            content: 'Hello! I\'m your AI learning assistant. Select any text in your document and ask me questions about it!',
-            timestamp: new Date().toISOString()
+            content: doc ? 
+                `Hello! I'm ready to help you understand "${doc.title}". Select any text in your document and ask me questions about it!` :
+                'Hello! I\'m your AI learning assistant. Upload a document and select any text to ask me questions about it!',
+            timestamp: timestamp
         };
         
         this.addMessageToChat(welcomeMessage);
         this.messages.push(welcomeMessage);
+        this.saveChatSession();
+        this.refreshSessionSelect();
+        
+        // Show success message
+        this.showToast('New chat session created', 'success');
     }
 
     /**
      * Save chat session
      */
     saveChatSession() {
-        if (this.currentSession && this.messages.length > 1) {
+        if (this.currentSession) {
             this.currentSession.messages = this.messages;
             this.currentSession.updatedAt = new Date().toISOString();
+            this.currentSession.docId = this.associatedDocId || this.currentSession.docId || null;
             storageManager.saveChatSession(this.currentSession);
+            // reload sessions cache
+            this.sessions = storageManager.getChats() || [];
         }
     }
 
     /**
      * Load chat session
      */
-    loadChatSession() {
-        const sessions = storageManager.getChats();
-        if (sessions && sessions.length > 0) {
-            // Load most recent session
-            const latestSession = sessions.sort((a, b) => 
-                new Date(b.updatedAt) - new Date(a.updatedAt)
-            )[0];
-            
-            this.currentSession = latestSession;
-            this.messages = latestSession.messages || [];
-            
-            // Display messages
-            this.chatMessages.innerHTML = '';
-            this.messages.forEach(message => {
-                this.addMessageToChat(message);
-            });
+    loadChatSessions() {
+        this.sessions = storageManager.getChats() || [];
+        if (this.sessions.length > 0) {
+            // pick the most recent, preferring current doc if available
+            const currentDoc = window.documentEditor && window.documentEditor.getCurrentDocument ? window.documentEditor.getCurrentDocument() : null;
+            let sessionToLoad = this.sessions.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0];
+            if (currentDoc) {
+                const docSessions = this.sessions.filter(s => s.docId === currentDoc.id);
+                if (docSessions.length > 0) {
+                    sessionToLoad = docSessions.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0];
+                }
+                this.associatedDocId = currentDoc.id;
+            }
+            this.currentSession = sessionToLoad;
+            this.messages = (sessionToLoad && sessionToLoad.messages) ? sessionToLoad.messages : [];
+            this.renderMessages();
         } else {
             this.createNewSession();
         }
+        this.refreshSessionSelect();
     }
 
     /**
@@ -565,7 +638,7 @@ What would you like to explore from your study materials?`;
     clearChatHistory() {
         this.chatMessages.innerHTML = '';
         this.messages = [];
-        this.createNewSession();
+        this.createNewSession(true);
     }
 
     /**
@@ -576,19 +649,156 @@ What would you like to explore from your study materials?`;
     }
 
     /**
+     * Render messages from this.messages
+     */
+    renderMessages() {
+        if (!this.chatMessages) return;
+        this.chatMessages.innerHTML = '';
+        this.messages.forEach(message => {
+            this.addMessageToChat(message);
+        });
+    }
+
+    /**
+     * Refresh the session selector with sessions grouped by current doc if available
+     */
+    refreshSessionSelect() {
+        const select = document.getElementById('chatSessionSelect');
+        if (!select) return;
+        const sessions = storageManager.getChats() || [];
+        select.innerHTML = '';
+        const currentDoc = window.documentEditor && window.documentEditor.getCurrentDocument ? window.documentEditor.getCurrentDocument() : null;
+        const makeOptionLabel = (s) => {
+            const title = s.title || 'Chat';
+            const time = new Date(s.updatedAt || s.createdAt).toLocaleString();
+            return `${title}${s.docId ? '' : ' (no doc)'} - ${time}`;
+        };
+        // If doc selected, show its sessions first
+        if (currentDoc) {
+            const docGroup = sessions.filter(s => s.docId === currentDoc.id);
+            docGroup.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = makeOptionLabel(s);
+                select.appendChild(opt);
+            });
+            // separator
+            if (docGroup.length > 0) {
+                const sep = document.createElement('option');
+                sep.disabled = true;
+                sep.textContent = '──────────';
+                select.appendChild(sep);
+            }
+        }
+        // Add remaining
+        sessions.filter(s => !currentDoc || s.docId !== currentDoc.id).forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = makeOptionLabel(s);
+            select.appendChild(opt);
+        });
+        // Set current value
+        if (this.currentSession) {
+            select.value = this.currentSession.id;
+        }
+    }
+
+    /**
+     * Switch the active session by id
+     */
+    switchSession(sessionId) {
+        if (!sessionId) return;
+        
+        const sessions = storageManager.getChats() || [];
+        const found = sessions.find(s => s.id === sessionId);
+        if (!found) return;
+        
+        // Save current session before switching
+        if (this.currentSession) {
+            this.saveChatSession();
+        }
+        
+        this.currentSession = found;
+        this.messages = found.messages || [];
+        this.associatedDocId = found.docId || null;
+        this.renderMessages();
+        
+        // Show success message
+        this.showToast(`Switched to: ${found.title}`, 'info');
+    }
+
+    /**
+     * Clear current chat session
+     */
+    clearCurrentChat() {
+        if (!this.currentSession) return;
+        
+        if (confirm('Are you sure you want to clear this chat? This action cannot be undone.')) {
+            // Delete from storage
+            storageManager.deleteChatSession(this.currentSession.id);
+            
+            // Create new session
+            this.createNewSession(true);
+            
+            this.showToast('Chat cleared successfully', 'success');
+        }
+    }
+
+    /**
+     * Delete a specific chat session
+     */
+    deleteChatSession(sessionId) {
+        if (!sessionId) return;
+        
+        const sessions = storageManager.getChats() || [];
+        const sessionToDelete = sessions.find(s => s.id === sessionId);
+        
+        if (!sessionToDelete) return;
+        
+        if (confirm(`Are you sure you want to delete "${sessionToDelete.title}"?`)) {
+            // Delete from storage
+            storageManager.deleteChatSession(sessionId);
+            
+            // If this was the current session, create a new one
+            if (this.currentSession && this.currentSession.id === sessionId) {
+                this.createNewSession(true);
+            }
+            
+            this.refreshSessionSelect();
+            this.showToast('Chat session deleted', 'success');
+        }
+    }
+    /**
      * Export chat history
      */
-    exportChatHistory() {
-        if (this.messages.length === 0) return null;
+    exportChatHistory(format = 'markdown') {
+        if (!this.currentSession || this.messages.length === 0) return null;
         
-        let content = `# Chat History\n\n`;
-        content += `*Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}*\n\n`;
+        if (format === 'json') {
+            return JSON.stringify(this.currentSession, null, 2);
+        }
+        
+        // Markdown format
+        let content = `# ${this.currentSession.title}\n\n`;
+        content += `*Created: ${new Date(this.currentSession.createdAt).toLocaleString()}*\n`;
+        content += `*Updated: ${new Date(this.currentSession.updatedAt).toLocaleString()}*\n\n`;
+        
+        if (this.currentSession.docId) {
+            const doc = storageManager.getDocument(this.currentSession.docId);
+            if (doc) {
+                content += `*Associated Document: ${doc.title}*\n\n`;
+            }
+        }
+        
+        content += `---\n\n`;
         
         this.messages.forEach(message => {
+            const timestamp = new Date(message.timestamp).toLocaleTimeString();
+            
             if (message.type === 'user') {
-                content += `**You:** ${message.content}\n\n`;
+                content += `**You** *(${timestamp})*: ${message.content}\n\n`;
             } else if (message.type === 'ai') {
-                content += `**AI Assistant:** ${message.content}\n\n`;
+                content += `**AI Assistant** *(${timestamp})*: ${message.content}\n\n`;
             } else if (message.type === 'context') {
                 content += `*${message.content}*\n\n`;
             }
@@ -596,8 +806,51 @@ What would you like to explore from your study materials?`;
         
         return content;
     }
-}
 
+    /**
+     * Show toast notification
+     */
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `chat-toast toast-${type}`;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            color: white;
+            font-size: 0.875rem;
+            z-index: 1001;
+            max-width: 300px;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        `;
+        
+        // Set background color based on type
+        const colors = {
+            success: '#10b981',
+            error: '#ef4444',
+            warning: '#f59e0b',
+            info: '#3b82f6'
+        };
+        toast.style.background = colors[type] || colors.info;
+        
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 3000);
+    }
+}
+ 
 // Add CSS for typing indicator and context messages
 const chatStyles = document.createElement('style');
 chatStyles.textContent = `

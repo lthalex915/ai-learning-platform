@@ -390,8 +390,10 @@ class DocumentEditor {
      */
     handleDocumentClick(e) {
         // Hide bubble if clicking outside of it and not selecting text
-        if (!this.floatingBubble.contains(e.target) && 
-            !this.documentContent.contains(e.target)) {
+        const clickedInsideBubble = this.floatingBubble && this.floatingBubble.contains(e.target);
+        const clickedInsideDoc = this.documentContent && this.documentContent.contains(e.target);
+
+        if (!clickedInsideBubble && !clickedInsideDoc) {
             this.hideFloatingBubble();
         }
     }
@@ -403,11 +405,35 @@ class DocumentEditor {
         if (!this.selectedText) return;
         
         try {
-            await navigator.clipboard.writeText(this.selectedText);
-            this.showSuccessMessage('Text copied to clipboard');
+            // Try modern clipboard API first
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(this.selectedText);
+                this.showSuccessMessage('Text copied to clipboard');
+            } else {
+                // Fallback for older browsers or non-secure contexts
+                const textArea = document.createElement('textarea');
+                textArea.value = this.selectedText;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        this.showSuccessMessage('Text copied to clipboard');
+                    } else {
+                        throw new Error('Copy command failed');
+                    }
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+            }
         } catch (error) {
             console.error('Failed to copy text:', error);
-            this.showErrorMessage('Failed to copy text');
+            this.showErrorMessage('Failed to copy text. Please try selecting and copying manually.');
         }
         
         this.hideFloatingBubble();
@@ -466,10 +492,17 @@ class DocumentEditor {
      */
     askFollowupQuestion() {
         if (!this.selectedText) return;
+
+        // Determine current document id to associate the chat session
+        const currentDoc = this.getCurrentDocument();
+        const docId = currentDoc && currentDoc.id ? currentDoc.id : null;
         
-        // Open chat panel with selected text
-        if (window.chatInterface) {
-            window.chatInterface.openChatWithSelectedText(this.selectedText);
+        // Open chat panel with selected text and associate with current doc
+        if (window.chatInterface && typeof window.chatInterface.openChatWithSelectedText === 'function') {
+            window.chatInterface.openChatWithSelectedText(this.selectedText, docId);
+        } else {
+            console.error('Chat interface not available');
+            this.showErrorMessage('Chat interface is not available');
         }
         
         this.hideFloatingBubble();

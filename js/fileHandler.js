@@ -25,14 +25,26 @@ class FileHandler {
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
 
+        if (!uploadArea || !fileInput) {
+            console.error('Upload area or file input not found');
+            return;
+        }
+
         // Drag and drop events
         uploadArea.addEventListener('dragover', this.handleDragOver.bind(this));
         uploadArea.addEventListener('dragleave', this.handleDragLeave.bind(this));
         uploadArea.addEventListener('drop', this.handleDrop.bind(this));
         
         // Click to upload
-        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('click', (e) => {
+            e.preventDefault();
+            fileInput.click();
+        });
         fileInput.addEventListener('change', this.handleFileSelect.bind(this));
+
+        // Prevent default drag behaviors on document
+        document.addEventListener('dragover', (e) => e.preventDefault());
+        document.addEventListener('drop', (e) => e.preventDefault());
     }
 
     /**
@@ -134,33 +146,49 @@ class FileHandler {
             type: this.getFileType(file),
             size: file.size,
             lastModified: file.lastModified,
+            uploadedAt: new Date().toISOString(),
             content: '',
             preview: null
         };
 
-        // Extract content based on file type
-        switch (fileData.type) {
-            case 'pdf':
-                fileData.content = await this.extractPdfContent(file);
-                fileData.preview = await this.generatePdfPreview(file);
-                break;
-            case 'docx':
-                fileData.content = await this.extractDocxContent(file);
-                fileData.preview = await this.generateDocxPreview(file);
-                break;
-            case 'txt':
-                fileData.content = await this.extractTextContent(file);
-                fileData.preview = fileData.content.substring(0, 500) + '...';
-                break;
-            case 'image':
-                fileData.content = `[Image: ${file.name}]`;
-                fileData.preview = await this.generateImagePreview(file);
-                break;
-        }
+        try {
+            // Extract content based on file type
+            switch (fileData.type) {
+                case 'pdf':
+                    fileData.content = await this.extractPdfContent(file);
+                    fileData.preview = await this.generatePdfPreview(file);
+                    break;
+                case 'docx':
+                    fileData.content = await this.extractDocxContent(file);
+                    fileData.preview = await this.generateDocxPreview(file);
+                    break;
+                case 'txt':
+                    fileData.content = await this.extractTextContent(file);
+                    fileData.preview = fileData.content.substring(0, 500) + (fileData.content.length > 500 ? '...' : '');
+                    break;
+                case 'image':
+                    fileData.content = `[Image: ${file.name}]`;
+                    fileData.preview = await this.generateImagePreview(file);
+                    break;
+                default:
+                    fileData.content = `[Unsupported file type: ${file.type}]`;
+                    fileData.preview = 'Preview not available';
+            }
 
-        // Save to storage and add to current session
-        storageManager.saveUploadedFile(fileData);
-        this.uploadedFiles.push(fileData);
+            // Save to storage and add to current session
+            storageManager.saveUploadedFile(fileData);
+            this.uploadedFiles.push(fileData);
+
+            // Save to lib folder structure if file system manager is available
+            if (window.fileSystemManager) {
+                window.fileSystemManager.saveUploadedFileToLib(fileData);
+            }
+
+            console.log(`Successfully processed file: ${file.name}`);
+        } catch (error) {
+            console.error(`Error processing file ${file.name}:`, error);
+            throw new Error(`Failed to process ${file.name}: ${error.message}`);
+        }
     }
 
     /**
@@ -542,12 +570,39 @@ class FileHandler {
      * Load files from storage
      */
     loadStoredFiles() {
-        const storedFiles = storageManager.getUploadedFiles();
-        this.uploadedFiles = storedFiles || [];
-        this.updateFileList();
-        
-        if (this.uploadedFiles.length > 0) {
-            this.enableActionButtons();
+        try {
+            const storedFiles = storageManager.getUploadedFiles();
+            this.uploadedFiles = storedFiles || [];
+            this.updateFileList();
+            
+            if (this.uploadedFiles.length > 0) {
+                this.enableActionButtons();
+            } else {
+                this.disableActionButtons();
+            }
+            
+            console.log(`Loaded ${this.uploadedFiles.length} stored files`);
+        } catch (error) {
+            console.error('Error loading stored files:', error);
+            this.uploadedFiles = [];
+            this.updateFileList();
+            this.disableActionButtons();
+        }
+    }
+
+    /**
+     * Initialize file handler after DOM is ready
+     */
+    initialize() {
+        // Ensure DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.initializeEventListeners();
+                this.loadStoredFiles();
+            });
+        } else {
+            this.initializeEventListeners();
+            this.loadStoredFiles();
         }
     }
 }

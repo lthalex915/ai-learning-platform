@@ -165,9 +165,20 @@
         <aside class="chat-panel" id="chatPanel">
             <div class="chat-header">
                 <h3><i class="fas fa-comments"></i> AI Assistant</h3>
-                <button class="close-chat" id="closeChatBtn">
-                    <i class="fas fa-times"></i>
-                </button>
+                <div class="chat-controls">
+                    <select id="chatSessionSelect" class="chat-session-select" title="Switch Chat Session">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                    <button class="new-chat-btn" id="newChatBtn" title="Start New Chat">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="clear-chat-btn" id="clearChatBtn" title="Clear Current Chat">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="close-chat" id="closeChatBtn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
             <div class="chat-messages" id="chatMessages">
                 <div class="chat-message ai-message">
@@ -273,6 +284,24 @@
                             <i class="fas fa-info-circle"></i>
                             Get your API key from <a href="https://openrouter.ai" target="_blank">OpenRouter.ai</a>
                         </p>
+
+                        <div class="model-select-group">
+                            <label for="modelSelect">Model:</label>
+                            <select id="modelSelect">
+                                <option value="google/gemini-2.5-pro">google/gemini-2.5-pro</option>
+                                <option value="openai/gpt-5">openai/gpt-5</option>
+                                <option value="anthropic/claude-sonnet-4">anthropic/claude-sonnet-4</option>
+                                <option value="deepseek/deepseek-chat-v3.1">deepseek/deepseek-chat-v3.1</option>
+                                <option value="deepseek/deepseek-chat-v3.1:free">deepseek/deepseek-chat-v3.1:free</option>
+                                <option value="__other__">Other...</option>
+                            </select>
+                        </div>
+
+                        <div class="custom-model-input-group" id="customModelGroup" style="display: none;">
+                            <label for="customModelInput">Custom Model ID:</label>
+                            <input type="text" id="customModelInput" placeholder="Enter a model id e.g. provider/model:variant">
+                        </div>
+
                         <div class="api-status" id="apiStatus">
                             <i class="fas fa-circle"></i>
                             <span>Not configured</span>
@@ -283,7 +312,7 @@
                 <div class="settings-section">
                     <h4>Model Information</h4>
                     <div class="model-info">
-                        <p><strong>Model:</strong> Google Gemini 2.5 Flash</p>
+                        <p><strong>Model:</strong> <span id="modelInfoName">google/gemini-2.5-pro</span></p>
                         <p><strong>Provider:</strong> OpenRouter</p>
                         <p><strong>Features:</strong> Text generation, document analysis, exercise creation</p>
                     </div>
@@ -309,6 +338,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.2.2/docx.min.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/fileSystemManager.js"></script>
     <script src="js/fileHandler.js"></script>
     <script src="js/realAI.js"></script>
     <script src="js/aiProcessor.js"></script>

@@ -5,10 +5,13 @@
 
 class RealAIHandler {
     constructor() {
-        // You'll need to set your actual API key here
-        this.apiKey = 'YOUR_OPENROUTER_API_KEY'; // Replace with actual key
+        // Initialize from localStorage if available; fallback to placeholders
+        const savedKey = localStorage.getItem('openrouter_api_key');
+        const savedModel = localStorage.getItem('openrouter_model') || 'google/gemini-2.5-pro';
+
+        this.apiKey = savedKey || 'YOUR_OPENROUTER_API_KEY';
         this.baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-        this.model = 'google/gemini-2.5-flash';
+        this.model = savedModel;
         this.siteUrl = 'http://localhost'; // Your site URL
         this.siteName = 'AI E-Learning Platform'; // Your site name
     }
@@ -187,6 +190,19 @@ Please provide a helpful answer to their question, keeping in mind they are lear
      */
     setApiKey(apiKey) {
         this.apiKey = apiKey;
+        // persist for future sessions
+        try { localStorage.setItem('openrouter_api_key', apiKey); } catch (_) {}
+    }
+
+    /**
+     * Set model id and persist
+     * @param {string} modelId
+     */
+    setModel(modelId) {
+        if (modelId && typeof modelId === 'string') {
+            this.model = modelId;
+            try { localStorage.setItem('openrouter_model', modelId); } catch (_) {}
+        }
     }
 }
 
