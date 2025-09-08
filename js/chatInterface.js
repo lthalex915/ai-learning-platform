@@ -512,18 +512,63 @@ What would you like to explore from your study materials?`;
   }
 
   /**
-   * Format message content
+   * Format message content with markdown support
    */
   formatMessageContent(content) {
-    // Convert line breaks to HTML
-    let formatted = content.replace(/\n/g, "<br>");
+    let formatted = content;
+
+    // Convert headers
+    formatted = formatted.replace(/^### (.*$)/gm, "<h3>$1</h3>");
+    formatted = formatted.replace(/^## (.*$)/gm, "<h2>$1</h2>");
+    formatted = formatted.replace(/^# (.*$)/gm, "<h1>$1</h1>");
+
+    // Convert bold and italic
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    formatted = formatted.replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+    // Convert inline code
+    formatted = formatted.replace(/`([^`]+)`/g, "<code>$1</code>");
+
+    // Convert code blocks
+    formatted = formatted.replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>");
+
+    // Convert blockquotes
+    formatted = formatted.replace(/^> (.*$)/gm, "<blockquote>$1</blockquote>");
+
+    // Convert links
+    formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
 
     // Convert bullet points
-    formatted = formatted.replace(/^• (.+)$/gm, "<li>$1</li>");
-    formatted = formatted.replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>");
-
+    formatted = formatted.replace(/^[•\-\*] (.+)$/gm, "<li>$1</li>");
+    
     // Convert numbered lists
     formatted = formatted.replace(/^\d+\. (.+)$/gm, "<li>$1</li>");
+
+    // Wrap consecutive list items in ul/ol tags
+    formatted = formatted.replace(/(<li>.*<\/li>)/s, (match) => {
+      // Check if it's a numbered list by looking for numbered items
+      if (/^\d+\./.test(content)) {
+        return "<ol>" + match + "</ol>";
+      } else {
+        return "<ul>" + match + "</ul>";
+      }
+    });
+
+    // Convert horizontal rules
+    formatted = formatted.replace(/^---$/gm, "<hr>");
+
+    // Convert line breaks to paragraphs
+    formatted = formatted.replace(/\n\n/g, "</p><p>");
+    formatted = formatted.replace(/\n/g, "<br>");
+
+    // Wrap in paragraphs if not already wrapped
+    if (!formatted.startsWith("<")) {
+      formatted = "<p>" + formatted + "</p>";
+    }
+
+    // Clean up empty paragraphs
+    formatted = formatted.replace(/<p><\/p>/g, "");
+    formatted = formatted.replace(/<p><br><\/p>/g, "");
 
     return formatted;
   }

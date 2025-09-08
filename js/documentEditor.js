@@ -80,6 +80,11 @@ class DocumentEditor {
     document.addEventListener("mouseup", (e) => this.handleTextSelection(e));
     document.addEventListener("keyup", (e) => this.handleTextSelection(e));
 
+    // Right-click context menu for document area
+    if (this.documentContent) {
+      this.documentContent.addEventListener("contextmenu", (e) => this.handleRightClick(e));
+    }
+
     // Click outside to hide bubble
     document.addEventListener("click", (e) => this.handleDocumentClick(e));
 
@@ -377,12 +382,38 @@ class DocumentEditor {
   }
 
   /**
+   * Handle right-click context menu
+   */
+  handleRightClick(e) {
+    e.preventDefault(); // Prevent default context menu
+    
+    // Only handle right-click within document content
+    if (!this.documentContent || !this.documentContent.contains(e.target)) {
+      return;
+    }
+
+    // Check if there's any text selected
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
+
+    if (selectedText.length > 0) {
+      // If text is selected, show bubble at selection
+      this.selectedText = selectedText;
+      this.selectionRange = selection.getRangeAt(0);
+      this.showFloatingBubble(e);
+    } else {
+      // If no text selected, show bubble at cursor position
+      this.showFloatingBubbleAtCursor(e);
+    }
+  }
+
+  /**
    * Handle text selection
    */
   handleTextSelection(e) {
     // Only handle selection within document content
     if (!this.documentContent || !this.documentContent.contains(e.target)) {
-      this.hideFloatingBubble();
+      this.hideFloatingBubbleWithDelay();
       return;
     }
 
@@ -401,7 +432,7 @@ class DocumentEditor {
       this.selectionRange = selection.getRangeAt(0);
       this.showFloatingBubble(e);
     } else {
-      this.hideFloatingBubble();
+      this.hideFloatingBubbleWithDelay();
     }
   }
 
@@ -503,9 +534,62 @@ class DocumentEditor {
   }
 
   /**
-   * Hide floating bubble
+   * Show floating bubble at cursor position (for right-click without selection)
+   */
+  showFloatingBubbleAtCursor(e) {
+    if (!this.floatingBubble) {
+      console.error("Floating bubble element not found!");
+      return;
+    }
+
+    // Update bubble buttons based on edit mode
+    this.updateBubbleButtons();
+
+    // Position bubble at cursor position
+    let left = e.clientX - 50; // Center bubble around cursor
+    let top = e.clientY - 50;
+
+    // Adjust if bubble goes off screen
+    if (left < 10) left = 10;
+    if (left + 100 > window.innerWidth - 10) {
+      left = window.innerWidth - 110;
+    }
+    if (top < 10) {
+      top = e.clientY + 10;
+    }
+
+    this.floatingBubble.style.left = left + "px";
+    this.floatingBubble.style.top = top + "px";
+    this.floatingBubble.style.display = "flex";
+
+    console.log("Floating bubble displayed at cursor position");
+  }
+
+  /**
+   * Hide floating bubble with delay
+   */
+  hideFloatingBubbleWithDelay() {
+    // Clear any existing timeout
+    if (this.hideTimeout) {
+      clearTimeout(this.hideTimeout);
+    }
+
+    // Set a 1-second delay before hiding
+    this.hideTimeout = setTimeout(() => {
+      this.hideFloatingBubble();
+    }, 1000);
+  }
+
+  /**
+   * Hide floating bubble immediately
    */
   hideFloatingBubble() {
+    // Clear any pending hide timeout
+    if (this.hideTimeout) {
+      clearTimeout(this.hideTimeout);
+      this.hideTimeout = null;
+    }
+
     if (this.floatingBubble) {
       this.floatingBubble.style.display = "none";
     }
@@ -595,7 +679,8 @@ class DocumentEditor {
       );
     }
 
-    this.hideFloatingBubble();
+    // Hide bubble with delay to show success feedback
+    this.hideFloatingBubbleWithDelay();
   }
 
   /**
@@ -624,7 +709,8 @@ class DocumentEditor {
       this.showErrorMessage("❌ Cut failed: " + error.message);
     }
 
-    this.hideFloatingBubble();
+    // Hide bubble with delay to show success feedback
+    this.hideFloatingBubbleWithDelay();
   }
 
   /**
@@ -657,7 +743,8 @@ class DocumentEditor {
       this.showErrorMessage("❌ Paste failed: " + error.message);
     }
 
-    this.hideFloatingBubble();
+    // Hide bubble with delay to show success feedback
+    this.hideFloatingBubbleWithDelay();
   }
 
   /**
@@ -694,7 +781,8 @@ class DocumentEditor {
       this.showErrorMessage("AI chat feature is not available");
     }
 
-    this.hideFloatingBubble();
+    // Hide bubble with delay to show success feedback
+    this.hideFloatingBubbleWithDelay();
   }
 
   /**
