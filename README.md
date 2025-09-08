@@ -62,7 +62,7 @@ A comprehensive web-based learning tool that allows students to upload their not
 ```
 
 ## Getting Started
-1. Open `index.html` in a modern web browser
+1. Open `index.html` in a modern web browser. You may also consider to run `python3 -m venv .venv && source .venv/bin/activate && python -m http.server 8000` in terminal first, then run `http://localhost:8000` in modern web browser.
 2. Upload your study materials
 3. Choose from Summarize, Explain, or Generate Exercises
 4. Interact with the generated content
