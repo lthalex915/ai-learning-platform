@@ -284,13 +284,16 @@ class App {
         window.aiProcessor.setApiKey(savedApiKey);
       }
 
-      // Set AI mode
-      if (savedMode === "real" && savedApiKey) {
+      // Enable AI mode by default - always try to use real AI if configured
+      if (savedApiKey) {
         window.aiProcessor.setUseRealAI(true);
-        console.log("Real AI mode enabled with saved settings");
+        localStorage.setItem("ai_mode", "real");
+        console.log("Real AI mode enabled by default with saved API key");
       } else {
-        window.aiProcessor.setUseRealAI(false);
-        console.log("Simulated AI mode enabled");
+        // If no API key, still enable real AI mode but it will fallback to simulated
+        window.aiProcessor.setUseRealAI(true);
+        localStorage.setItem("ai_mode", "real");
+        console.log("Real AI mode enabled by default (will use simulated as fallback)");
       }
     }
   }
@@ -1081,23 +1084,21 @@ class App {
       const isConfigured = window.aiProcessor.isRealAIAvailable();
 
       if (realAIToggle) {
-        realAIToggle.checked = isRealAI;
+        realAIToggle.checked = true; // Always checked since AI mode is enabled by default
       }
 
       if (currentMode && modeDescription) {
-        if (isRealAI) {
+        if (isConfigured) {
           currentMode.textContent = "Real AI";
           modeDescription.textContent = "Using OpenRouter API for AI responses";
         } else {
-          currentMode.textContent = "Simulated AI";
-          modeDescription.textContent =
-            "Using simulated AI responses for testing";
+          currentMode.textContent = "Real AI (Fallback Mode)";
+          modeDescription.textContent = "AI mode enabled - will use simulated responses until API key is configured";
         }
       }
 
       if (apiKeySection) {
-        apiKeySection.style.display =
-          realAIToggle && realAIToggle.checked ? "block" : "none";
+        apiKeySection.style.display = "block"; // Always show since AI mode is always on
       }
 
       if (apiStatus) {

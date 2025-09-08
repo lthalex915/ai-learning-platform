@@ -430,6 +430,9 @@ class DocumentEditor {
 
     console.log("Selection rect:", rect);
 
+    // Update bubble buttons based on edit mode
+    this.updateBubbleButtons();
+
     // Position bubble above selection
     const bubbleRect = this.floatingBubble.getBoundingClientRect();
     let left = rect.left + rect.width / 2 - bubbleRect.width / 2;
@@ -451,6 +454,52 @@ class DocumentEditor {
     this.floatingBubble.style.display = "flex";
 
     console.log("Floating bubble displayed");
+  }
+
+  /**
+   * Update bubble buttons based on current mode
+   */
+  updateBubbleButtons() {
+    const copyBtn = document.getElementById("copyBtn");
+    const cutBtn = document.getElementById("cutBtn");
+    const pasteBtn = document.getElementById("pasteBtn");
+    const askFollowupBtn = document.getElementById("askFollowupBtn");
+
+    if (this.isEditing) {
+      // Edit mode: show all buttons
+      if (copyBtn) copyBtn.style.display = "flex";
+      if (cutBtn) cutBtn.style.display = "flex";
+      if (pasteBtn) pasteBtn.style.display = "flex";
+      if (askFollowupBtn) askFollowupBtn.style.display = "flex";
+    } else {
+      // Preview mode: show only copy and ask follow-up
+      if (copyBtn) copyBtn.style.display = "flex";
+      if (cutBtn) cutBtn.style.display = "none";
+      if (pasteBtn) pasteBtn.style.display = "none";
+      if (askFollowupBtn) askFollowupBtn.style.display = "flex";
+    }
+  }
+
+  /**
+   * Show tick feedback for successful action
+   */
+  showTickFeedback(buttonElement) {
+    if (!buttonElement) return;
+
+    const originalIcon = buttonElement.querySelector("i");
+    if (!originalIcon) return;
+
+    const originalClass = originalIcon.className;
+    
+    // Change to tick icon
+    originalIcon.className = "fas fa-check";
+    buttonElement.style.background = "#10b981"; // Success green
+    
+    // Revert after 1 second
+    setTimeout(() => {
+      originalIcon.className = originalClass;
+      buttonElement.style.background = "";
+    }, 1000);
   }
 
   /**
@@ -485,6 +534,8 @@ class DocumentEditor {
   async copySelectedText() {
     console.log("copySelectedText called, selectedText:", this.selectedText);
 
+    const copyBtn = document.getElementById("copyBtn");
+
     // If no saved selected text, try to get from current selection
     let textToCopy = this.selectedText;
     if (!textToCopy) {
@@ -509,7 +560,7 @@ class DocumentEditor {
       if (navigator.clipboard && window.isSecureContext) {
         console.log("Using modern clipboard API");
         await navigator.clipboard.writeText(textToCopy);
-        this.showSuccessMessage("✅ Text copied to clipboard");
+        this.showTickFeedback(copyBtn);
         console.log("Copy successful with modern API");
       } else {
         console.log("Using fallback copy method");
@@ -526,7 +577,7 @@ class DocumentEditor {
         try {
           const successful = document.execCommand("copy");
           if (successful) {
-            this.showSuccessMessage("✅ Text copied to clipboard");
+            this.showTickFeedback(copyBtn);
             console.log("Copy successful with fallback method");
           } else {
             throw new Error("Copy command failed");
@@ -551,6 +602,8 @@ class DocumentEditor {
    * Cut selected text
    */
   async cutSelectedText() {
+    const cutBtn = document.getElementById("cutBtn");
+
     if (!this.selectedText || !this.isEditing) {
       this.showErrorMessage("Please select text to cut first");
       return;
@@ -565,7 +618,7 @@ class DocumentEditor {
         this.handleContentChange();
       }
 
-      this.showSuccessMessage("✂️ Text cut to clipboard");
+      this.showTickFeedback(cutBtn);
     } catch (error) {
       console.error("Failed to cut text:", error);
       this.showErrorMessage("❌ Cut failed: " + error.message);
@@ -578,6 +631,8 @@ class DocumentEditor {
    * Paste text
    */
   async pasteText() {
+    const pasteBtn = document.getElementById("pasteBtn");
+
     if (!this.isEditing) {
       this.showErrorMessage("Please enter edit mode first");
       return;
@@ -596,7 +651,7 @@ class DocumentEditor {
         document.execCommand("paste");
       }
 
-      this.showSuccessMessage("📋 Text pasted");
+      this.showTickFeedback(pasteBtn);
     } catch (error) {
       console.error("Failed to paste text:", error);
       this.showErrorMessage("❌ Paste failed: " + error.message);
@@ -609,6 +664,8 @@ class DocumentEditor {
    * Ask follow-up question
    */
   askFollowupQuestion() {
+    const askFollowupBtn = document.getElementById("askFollowupBtn");
+
     // If no saved selected text, try to get from current selection
     let textToUse = this.selectedText;
     if (!textToUse) {
@@ -631,7 +688,7 @@ class DocumentEditor {
       typeof window.chatInterface.openChatWithSelectedText === "function"
     ) {
       window.chatInterface.openChatWithSelectedText(textToUse, docId);
-      this.showSuccessMessage("💬 Selected text copied to AI chat");
+      this.showTickFeedback(askFollowupBtn);
     } else {
       console.error("Chat interface not available");
       this.showErrorMessage("AI chat feature is not available");

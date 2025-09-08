@@ -341,18 +341,43 @@ class ChatInterface {
    * Generate AI response
    */
   async generateAIResponse(question, selectedText = "") {
-    // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    let response = "";
-
-    if (selectedText) {
-      response = this.generateContextualResponse(question, selectedText);
-    } else {
-      response = this.generateGeneralResponse(question);
+    try {
+      // Check if real AI is available and configured
+      if (window.aiProcessor && window.aiProcessor.useRealAI && window.aiProcessor.realAIHandler && window.aiProcessor.realAIHandler.isConfigured()) {
+        // Use real AI for chat responses
+        const context = this.getCurrentDocumentContext();
+        const response = await window.aiProcessor.realAIHandler.handleFollowUpQuestion(selectedText, question, context);
+        return response;
+      } else {
+        // Fallback to simulated AI with shorter delay
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        
+        let response = "";
+        if (selectedText) {
+          response = this.generateContextualResponse(question, selectedText);
+        } else {
+          response = this.generateGeneralResponse(question);
+        }
+        
+        // Add note about using simulated AI
+        response = `*Note: Using simulated AI responses. Configure your OpenRouter API key in Settings to use real AI.*\n\n${response}`;
+        return response;
+      }
+    } catch (error) {
+      console.error('AI chat error:', error);
+      // Fallback to simulated response on error
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      
+      let response = "";
+      if (selectedText) {
+        response = this.generateContextualResponse(question, selectedText);
+      } else {
+        response = this.generateGeneralResponse(question);
+      }
+      
+      response = `*Note: AI API error, using simulated response. Error: ${error.message}*\n\n${response}`;
+      return response;
     }
-
-    return response;
   }
 
   /**
@@ -878,6 +903,22 @@ What would you like to explore from your study materials?`;
     });
 
     return content;
+  }
+
+  /**
+   * Get current document context for AI responses
+   */
+  getCurrentDocumentContext() {
+    const currentDoc = window.documentEditor && window.documentEditor.getCurrentDocument
+      ? window.documentEditor.getCurrentDocument()
+      : null;
+    
+    if (currentDoc && currentDoc.content) {
+      // Return first 1000 characters of document content as context
+      return currentDoc.content.substring(0, 1000);
+    }
+    
+    return "No document context available";
   }
 
   /**
