@@ -1463,3 +1463,32 @@ input:checked + .slider:before {
   border-color: var(--primary-color);
   outline: none;
 }
+
+/* Solution Acknowledgment Modal Styles */
+.acknowledgment-content {
+  text-align: left;
+}
+
+.acknowledgment-content p {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+.acknowledgment-content ul {
+  margin: var(--spacing-md) 0;
+  padding-left: var(--spacing-xl);
+}
+
+.acknowledgment-content li {
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-secondary);
+}
+
+.acknowledgment-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-light);
+}

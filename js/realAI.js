@@ -108,7 +108,7 @@ Please provide a structured explanation with clear headings for each main topic.
     }
 
     /**
-     * Generate exercises with real AI
+     * Generate exercises with real AI (legacy method - kept for compatibility)
      * @param {string} content - Content to generate exercises from
      * @param {string} questionType - Type of questions (MC, Short, Long, Essay)
      * @returns {Promise<Object>} - Object with questions and solutions
@@ -154,6 +154,83 @@ Make sure the questions test understanding of the key concepts and are appropria
             questions: questions,
             solutions: solutions
         };
+    }
+
+    /**
+     * Generate ONLY questions with real AI (no answers/solutions)
+     * @param {string} content - Content to generate exercises from
+     * @param {string} questionType - Type of questions (MC, Short, Long, Essay)
+     * @returns {Promise<string>} - Questions only
+     */
+    async generateQuestionsOnly(content, questionType) {
+        const typeInstructions = {
+            'MC': 'multiple choice questions with 4 options each (A, B, C, D)',
+            'Short': 'short answer questions that can be answered in 1-2 sentences',
+            'Long': 'long answer questions requiring detailed explanations',
+            'Essay': 'essay questions requiring comprehensive analysis'
+        };
+
+        const instruction = typeInstructions[questionType] || 'mixed question types';
+
+        const messages = [{
+            role: 'system',
+            content: `You are an educational content generator. Your task is to create ONLY practice questions for students. 
+
+CRITICAL INSTRUCTIONS:
+- Generate ONLY questions, NO answers, NO solutions, NO hints
+- Do NOT include any form of answers or solutions in your response
+- Do NOT provide explanations or correct answers
+- Focus solely on creating well-structured questions
+- Number each question clearly
+- For multiple choice questions, provide only the options (A, B, C, D) without indicating which is correct`
+        }, {
+            role: 'user',
+            content: `Based on the following content, generate practice questions for a Hong Kong student. Create ${instruction}.
+
+Content: ${content}
+
+Generate 5-8 well-structured questions that test understanding of the key concepts. Make sure the questions are appropriate for the student's learning level.
+
+REMEMBER: Provide ONLY the questions. Do NOT include any answers, solutions, or hints.`
+        }];
+
+        return await this.makeAPICall(messages);
+    }
+
+    /**
+     * Generate ONLY solutions for previously generated questions
+     * @param {string} questions - The questions to generate solutions for
+     * @param {string} content - Original content for context
+     * @returns {Promise<string>} - Solutions only
+     */
+    async generateSolutionsOnly(questions, content) {
+        const messages = [{
+            role: 'system',
+            content: `You are an educational content generator. Your task is to provide ONLY detailed solutions and answers to the given questions.
+
+CRITICAL INSTRUCTIONS:
+- Provide ONLY solutions and answers
+- Do NOT repeat the questions in your response
+- Number each solution to match the question numbers
+- Provide detailed explanations for each answer
+- For multiple choice questions, clearly state the correct answer (e.g., "Answer: B") and explain why
+- Make solutions comprehensive and educational`
+        }, {
+            role: 'user',
+            content: `Provide detailed solutions for the following questions based on the given content.
+
+Questions:
+${questions}
+
+Original Content (for context):
+${content}
+
+Generate comprehensive solutions that explain the reasoning behind each answer. For multiple choice questions, clearly indicate the correct answer and explain why it's correct and why other options are incorrect.
+
+REMEMBER: Provide ONLY the solutions. Do NOT repeat the questions.`
+        }];
+
+        return await this.makeAPICall(messages);
     }
 
     /**

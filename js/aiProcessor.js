@@ -517,35 +517,32 @@ class AIProcessor {
     }
 
     /**
-     * Generate exercises
+     * Generate exercises with separate question and answer generation
      */
     async generateExercises(files, exerciseType, questionCount = 5) {
         if (!files || files.length === 0) {
             throw new Error('No files to generate exercises from');
         }
 
-        window.fileHandler.showLoading(`AI is generating ${exerciseType} exercises...`);
+        // First generate questions only
+        window.fileHandler.showLoading(`AI is generating ${exerciseType} questions...`);
 
-        let exercises, solutions;
+        let exercises;
         try {
             if (this.useRealAI && this.realAIHandler) {
-                // Use real AI
+                // Use real AI for questions only
                 const content = files.map(f => f.content).join('\n\n---\n\n');
-                const result = await this.realAIHandler.generateExercises(content, exerciseType);
-                exercises = result.questions;
-                solutions = result.solutions;
+                exercises = await this.realAIHandler.generateQuestionsOnly(content, exerciseType, questionCount);
             } else {
-                // Use simulated AI
+                // Use simulated AI for questions only
                 await this.delay(this.processingDelay);
                 exercises = this.createExercises(files, exerciseType, questionCount);
-                solutions = this.createSolutions(exercises, exerciseType);
             }
         } catch (error) {
             console.error('AI processing error:', error);
             // Fallback to simulated AI
             await this.delay(this.processingDelay);
             exercises = this.createExercises(files, exerciseType, questionCount);
-            solutions = this.createSolutions(exercises, exerciseType);
             exercises = `*Note: Using simulated AI due to API error*\n\n${exercises}`;
         }
 
@@ -560,24 +557,61 @@ class AIProcessor {
             createdAt: new Date().toISOString()
         };
 
+        // Save exercise document
+        storageManager.saveDocument(exerciseDocument);
+        
+        window.fileHandler.hideLoading();
+        return { exercises: exerciseDocument };
+    }
+
+    /**
+     * Generate solutions separately for existing exercises
+     */
+    async generateSolutions(exerciseDocument) {
+        if (!exerciseDocument || exerciseDocument.type !== 'exercise') {
+            throw new Error('Invalid exercise document');
+        }
+
+        window.fileHandler.showLoading(`AI is generating solutions...`);
+
+        let solutions;
+        try {
+            if (this.useRealAI && this.realAIHandler) {
+                // Use real AI for solutions
+                const exerciseContent = exerciseDocument.content;
+                const sourceContent = exerciseDocument.sourceFiles ? 
+                    exerciseDocument.sourceFiles.map(f => f.content || '').join('\n\n---\n\n') : '';
+                solutions = await this.realAIHandler.generateSolutionsOnly(exerciseContent, sourceContent, exerciseDocument.exerciseType);
+            } else {
+                // Use simulated AI for solutions
+                await this.delay(this.processingDelay);
+                solutions = this.createSolutions(exerciseDocument.content, exerciseDocument.exerciseType);
+            }
+        } catch (error) {
+            console.error('AI processing error:', error);
+            // Fallback to simulated AI
+            await this.delay(this.processingDelay);
+            solutions = this.createSolutions(exerciseDocument.content, exerciseDocument.exerciseType);
+            solutions = `*Note: Using simulated AI due to API error*\n\n${solutions}`;
+        }
+
         const solutionDocument = {
             id: storageManager.generateId(),
-            title: `Solutions: ${this.capitalizeFirst(exerciseType)} Exercises`,
+            title: `Solutions: ${exerciseDocument.title}`,
             type: 'solution',
-            exerciseType: exerciseType,
+            exerciseType: exerciseDocument.exerciseType,
             content: solutions,
             parentExerciseId: exerciseDocument.id,
-            sourceFiles: files.map(f => ({ name: f.name, type: f.type })),
+            sourceFiles: exerciseDocument.sourceFiles,
             aiType: this.useRealAI ? 'real' : 'simulated',
             createdAt: new Date().toISOString()
         };
 
-        // Save documents
-        storageManager.saveDocument(exerciseDocument);
+        // Save solution document
         storageManager.saveDocument(solutionDocument);
         
         window.fileHandler.hideLoading();
-        return { exercises: exerciseDocument, solutions: solutionDocument };
+        return solutionDocument;
     }
 
     /**

@@ -64,6 +64,12 @@ class DocumentEditor {
       this.saveBtn.addEventListener("click", () => this.saveDocument());
     }
 
+    // Solution button
+    const solutionBtn = document.getElementById("solutionBtn");
+    if (solutionBtn) {
+      solutionBtn.addEventListener("click", () => this.handleSolutionRequest());
+    }
+
     // Export buttons
     if (this.exportDocxBtn) {
       this.exportDocxBtn.addEventListener("click", () =>
@@ -75,6 +81,9 @@ class DocumentEditor {
         this.exportDocument("pdf")
       );
     }
+
+    // Solution acknowledgment modal
+    this.setupSolutionModalListeners();
 
     // Text selection events
     document.addEventListener("mouseup", (e) => this.handleTextSelection(e));
@@ -188,6 +197,16 @@ class DocumentEditor {
     if (this.documentType) {
       this.documentType.textContent = document.type.toUpperCase();
       this.documentType.className = `document-type ${document.type}`;
+    }
+
+    // Show/hide solution button based on document type
+    const solutionBtn = window.document.getElementById("solutionBtn");
+    if (solutionBtn) {
+      if (document.type === 'exercise') {
+        solutionBtn.style.display = "flex";
+      } else {
+        solutionBtn.style.display = "none";
+      }
     }
 
     // Convert markdown-like content to HTML
@@ -949,6 +968,101 @@ class DocumentEditor {
   isDocumentEditing() {
     return this.isEditing;
   }
+
+  /**
+   * Setup solution modal listeners
+   */
+  setupSolutionModalListeners() {
+    const modal = document.getElementById("solutionAcknowledgmentModal");
+    const cancelBtn = document.getElementById("cancelSolutionBtn");
+    const confirmBtn = document.getElementById("confirmSolutionBtn");
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", () => this.hideSolutionModal());
+    }
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", () => this.confirmSolutionReveal());
+    }
+
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          this.hideSolutionModal();
+        }
+      });
+    }
+  }
+
+  /**
+   * Handle solution request
+   */
+  async handleSolutionRequest() {
+    if (!this.currentDocument || this.currentDocument.type !== 'exercise') {
+      this.showErrorMessage("Solutions are only available for exercise documents");
+      return;
+    }
+
+    // Check if this is the first time revealing solutions for this document
+    const hasShownAcknowledgment = localStorage.getItem(`solution_ack_${this.currentDocument.id}`);
+    
+    if (!hasShownAcknowledgment) {
+      this.showSolutionModal();
+    } else {
+      this.generateAndShowSolutions();
+    }
+  }
+
+  /**
+   * Show solution acknowledgment modal
+   */
+  showSolutionModal() {
+    const modal = document.getElementById("solutionAcknowledgmentModal");
+    if (modal) {
+      modal.style.display = "flex";
+      setTimeout(() => modal.classList.add("open"), 10);
+    }
+  }
+
+  /**
+   * Hide solution acknowledgment modal
+   */
+  hideSolutionModal() {
+    const modal = document.getElementById("solutionAcknowledgmentModal");
+    if (modal) {
+      modal.classList.remove("open");
+      setTimeout(() => (modal.style.display = "none"), 300);
+    }
+  }
+
+  /**
+   * Confirm solution reveal
+   */
+  confirmSolutionReveal() {
+    // Mark that acknowledgment has been shown for this document
+    localStorage.setItem(`solution_ack_${this.currentDocument.id}`, 'true');
+    
+    this.hideSolutionModal();
+    this.generateAndShowSolutions();
+  }
+
+  /**
+   * Generate and show solutions
+   */
+  async generateAndShowSolutions() {
+    try {
+      const solutionDocument = await window.aiProcessor.generateSolutions(this.currentDocument);
+      
+      // Display the solution document
+      this.displayDocument(solutionDocument);
+      
+      this.showSuccessMessage("Solutions generated successfully!");
+    } catch (error) {
+      console.error("Solution generation error:", error);
+      this.showErrorMessage("Failed to generate solutions: " + error.message);
+    }
+  }
+
 }
 
 // Create global document editor instance

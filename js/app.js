@@ -491,14 +491,9 @@ class App {
         count
       );
 
-      // Display the exercise document
+      // Display the exercise document (questions only)
       this.displayDocument(result.exercises);
       this.currentView = "document";
-
-      // Show solution overlay if it's a solution document
-      if (result.exercises.type === "exercise") {
-        this.showSolutionOverlay();
-      }
     } catch (error) {
       console.error("Exercise generation error:", error);
       this.showError("Failed to generate exercises: " + error.message);
