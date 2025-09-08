@@ -62,11 +62,12 @@ A comprehensive web-based learning tool that allows students to upload their not
 ```
 
 ## Getting Started
-1. Open `index.html` in a modern web browser. You may also consider to run `python3 -m venv .venv && source .venv/bin/activate && python -m http.server 8000` in terminal first, then run `http://localhost:8000` in modern web browser.
-2. Upload your study materials
-3. Choose from Summarize, Explain, or Generate Exercises
-4. Interact with the generated content
-5. Export or save your work locally
+1. Open `index.html` in a modern web browser. You may also consider to run `python3 -m venv .venv && source .venv/bin/activate && python -m http.server 8000` in terminal first, then run `http://localhost:8000` in modern web browser
+2. Obtain the API key from [OpenRouter](https://openrouter.ai), and paste it inside Settings tab
+3. Upload your study materials
+4. Choose from Summarize, Explain, or Generate Exercises
+5. Interact with the generated content
+6. Export or save your work locally
 
 ## Browser Compatibility
 - Chrome 80+
