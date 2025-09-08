@@ -293,7 +293,9 @@ class App {
         // If no API key, still enable real AI mode but it will fallback to simulated
         window.aiProcessor.setUseRealAI(true);
         localStorage.setItem("ai_mode", "real");
-        console.log("Real AI mode enabled by default (will use simulated as fallback)");
+        console.log(
+          "Real AI mode enabled by default (will use simulated as fallback)"
+        );
       }
     }
   }
@@ -1088,7 +1090,8 @@ class App {
           modeDescription.textContent = "Using OpenRouter API for AI responses";
         } else {
           currentMode.textContent = "Real AI (Fallback Mode)";
-          modeDescription.textContent = "AI mode enabled - will use simulated responses until API key is configured";
+          modeDescription.textContent =
+            "AI mode enabled - will use simulated responses until API key is configured";
         }
       }
 
@@ -1104,11 +1107,21 @@ class App {
         testConnectionBtn.disabled = !isConfigured;
       }
 
-      // Load saved API key (masked)
+      // Load saved API key
       const savedApiKey = localStorage.getItem("openrouter_api_key");
       if (apiKeyInput && savedApiKey) {
-        apiKeyInput.value = "••••••••••••••••••••••••••••••••••••••••";
+        // Store the actual API key for toggle functionality
+        apiKeyInput.dataset.actualValue = savedApiKey;
         apiKeyInput.dataset.hasKey = "true";
+        // Show masked version initially
+        apiKeyInput.value = "••••••••••••••••••••••••••••••••••••••••";
+        // Ensure input type is password
+        apiKeyInput.type = "password";
+      } else if (apiKeyInput) {
+        // Clear any previous data
+        delete apiKeyInput.dataset.actualValue;
+        delete apiKeyInput.dataset.hasKey;
+        apiKeyInput.value = "";
       }
     }
   }
@@ -1166,9 +1179,10 @@ class App {
         testConnectionBtn.disabled = !modelValid || !hasValue || !isNotMasked;
       }
 
-      // Clear the hasKey flag if user starts typing
+      // Clear the stored data if user starts typing new content
       if (isNotMasked && apiKeyInput.dataset.hasKey) {
         delete apiKeyInput.dataset.hasKey;
+        delete apiKeyInput.dataset.actualValue;
       }
     }
   }
@@ -1184,9 +1198,17 @@ class App {
       const icon = toggleBtn.querySelector("i");
 
       if (apiKeyInput.type === "password") {
+        // Show actual API key
+        if (apiKeyInput.dataset.actualValue) {
+          apiKeyInput.value = apiKeyInput.dataset.actualValue;
+        }
         apiKeyInput.type = "text";
         icon.className = "fas fa-eye-slash";
       } else {
+        // Hide API key with mask
+        if (apiKeyInput.dataset.hasKey) {
+          apiKeyInput.value = "••••••••••••••••••••••••••••••••••••••••";
+        }
         apiKeyInput.type = "password";
         icon.className = "fas fa-eye";
       }
@@ -1308,12 +1330,18 @@ class App {
     let apiKey = null;
 
     if (useRealAI && apiKeyInput) {
-      if (apiKeyInput.dataset.hasKey) {
+      if (apiKeyInput.dataset.hasKey && apiKeyInput.dataset.actualValue) {
         // Keep existing key
-        apiKey = localStorage.getItem("openrouter_api_key");
-      } else {
-        // Use new key
+        apiKey = apiKeyInput.dataset.actualValue;
+      } else if (
+        apiKeyInput.value.trim() &&
+        !apiKeyInput.value.startsWith("••••")
+      ) {
+        // Use new key (not masked)
         apiKey = apiKeyInput.value.trim();
+      } else {
+        // Fallback to localStorage
+        apiKey = localStorage.getItem("openrouter_api_key");
       }
 
       if (!apiKey) {

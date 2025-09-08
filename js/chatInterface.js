@@ -24,56 +24,44 @@ class ChatInterface {
     this.chatMessages = document.getElementById("chatMessages");
     this.chatInput = document.getElementById("chatInput");
     this.sendChatBtn = document.getElementById("sendChatBtn");
-    this.closeChatBtn = document.getElementById("closeChatBtn");
+    this.newChatBtn = document.getElementById("newChatBtn");
+    this.clearChatBtn = document.getElementById("clearChatBtn");
+    this.chatSessionSelect = document.getElementById("chatSessionSelect");
 
     // Create chat toggle button for mobile
     this.createChatToggle();
 
-    // Add New Chat button in header if not exists
-    const chatHeader = this.chatPanel
-      ? this.chatPanel.querySelector(".chat-header")
-      : null;
-    if (chatHeader && !chatHeader.querySelector("#newChatBtn")) {
-      const newBtn = document.createElement("button");
-      newBtn.id = "newChatBtn";
-      newBtn.className = "new-chat-btn";
-      newBtn.title = "Start New Chat";
-      newBtn.innerHTML = '<i class="fas fa-plus"></i>';
-      chatHeader.insertBefore(
-        newBtn,
-        chatHeader.querySelector("#closeChatBtn")
-      );
-      newBtn.addEventListener("click", () => this.createNewSession(true));
-    }
-
-    // Create sessions dropdown
-    if (chatHeader && !chatHeader.querySelector("#chatSessionSelect")) {
-      const select = document.createElement("select");
-      select.id = "chatSessionSelect";
-      select.className = "chat-session-select";
-      select.title = "Switch Chat Session";
-      chatHeader.insertBefore(select, chatHeader.querySelector("#newChatBtn"));
-      select.addEventListener("change", (e) =>
-        this.switchSession(e.target.value)
-      );
-    }
-
-    // Add clear chat button
-    if (chatHeader && !chatHeader.querySelector("#clearChatBtn")) {
-      const clearBtn = document.createElement("button");
-      clearBtn.id = "clearChatBtn";
-      clearBtn.className = "clear-chat-btn";
-      clearBtn.title = "Clear Current Chat";
-      clearBtn.innerHTML = '<i class="fas fa-trash"></i>';
-      chatHeader.insertBefore(
-        clearBtn,
-        chatHeader.querySelector("#closeChatBtn")
-      );
-      clearBtn.addEventListener("click", () => this.clearCurrentChat());
-    }
+    // Set up event listeners for existing buttons
+    this.setupChatControlListeners();
 
     // Load existing chat session(s) if available
     this.loadChatSessions();
+  }
+
+  /**
+   * Set up chat control button listeners
+   */
+  setupChatControlListeners() {
+    // + 按鈕：新增chat
+    if (this.newChatBtn) {
+      this.newChatBtn.addEventListener("click", () =>
+        this.createNewSession(true)
+      );
+    }
+
+    // 垃圾桶按鈕：刪除當前chat
+    if (this.clearChatBtn) {
+      this.clearChatBtn.addEventListener("click", () =>
+        this.deleteCurrentChat()
+      );
+    }
+
+    // session選擇器
+    if (this.chatSessionSelect) {
+      this.chatSessionSelect.addEventListener("change", (e) =>
+        this.switchSession(e.target.value)
+      );
+    }
   }
 
   /**
@@ -96,11 +84,6 @@ class ChatInterface {
 
       // Auto-resize input
       this.chatInput.addEventListener("input", () => this.autoResizeInput());
-    }
-
-    // Close chat button
-    if (this.closeChatBtn) {
-      this.closeChatBtn.addEventListener("click", () => this.closeChat());
     }
 
     // Chat toggle button
@@ -343,38 +326,48 @@ class ChatInterface {
   async generateAIResponse(question, selectedText = "") {
     try {
       // Check if real AI is available and configured
-      if (window.aiProcessor && window.aiProcessor.useRealAI && window.aiProcessor.realAIHandler && window.aiProcessor.realAIHandler.isConfigured()) {
+      if (
+        window.aiProcessor &&
+        window.aiProcessor.useRealAI &&
+        window.aiProcessor.realAIHandler &&
+        window.aiProcessor.realAIHandler.isConfigured()
+      ) {
         // Use real AI for chat responses
         const context = this.getCurrentDocumentContext();
-        const response = await window.aiProcessor.realAIHandler.handleFollowUpQuestion(selectedText, question, context);
+        const response =
+          await window.aiProcessor.realAIHandler.handleFollowUpQuestion(
+            selectedText,
+            question,
+            context
+          );
         return response;
       } else {
         // Fallback to simulated AI with shorter delay
         await new Promise((resolve) => setTimeout(resolve, 800));
-        
+
         let response = "";
         if (selectedText) {
           response = this.generateContextualResponse(question, selectedText);
         } else {
           response = this.generateGeneralResponse(question);
         }
-        
+
         // Add note about using simulated AI
         response = `*Note: Using simulated AI responses. Configure your OpenRouter API key in Settings to use real AI.*\n\n${response}`;
         return response;
       }
     } catch (error) {
-      console.error('AI chat error:', error);
+      console.error("AI chat error:", error);
       // Fallback to simulated response on error
       await new Promise((resolve) => setTimeout(resolve, 800));
-      
+
       let response = "";
       if (selectedText) {
         response = this.generateContextualResponse(question, selectedText);
       } else {
         response = this.generateGeneralResponse(question);
       }
-      
+
       response = `*Note: AI API error, using simulated response. Error: ${error.message}*\n\n${response}`;
       return response;
     }
@@ -530,17 +523,23 @@ What would you like to explore from your study materials?`;
     formatted = formatted.replace(/`([^`]+)`/g, "<code>$1</code>");
 
     // Convert code blocks
-    formatted = formatted.replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>");
+    formatted = formatted.replace(
+      /```([\s\S]*?)```/g,
+      "<pre><code>$1</code></pre>"
+    );
 
     // Convert blockquotes
     formatted = formatted.replace(/^> (.*$)/gm, "<blockquote>$1</blockquote>");
 
     // Convert links
-    formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    formatted = formatted.replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank">$1</a>'
+    );
 
     // Convert bullet points
     formatted = formatted.replace(/^[•\-\*] (.+)$/gm, "<li>$1</li>");
-    
+
     // Convert numbered lists
     formatted = formatted.replace(/^\d+\. (.+)$/gm, "<li>$1</li>");
 
@@ -586,7 +585,12 @@ What would you like to explore from your study materials?`;
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
 
-    return date.toLocaleDateString();
+    // Force English date format
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   }
 
   /**
@@ -677,7 +681,7 @@ What would you like to explore from your study materials?`;
         ? `Chat: ${doc.title.substring(0, 30)}${
             doc.title.length > 30 ? "..." : ""
           }`
-        : `New Chat ${new Date().toLocaleTimeString()}`,
+        : `New Chat ${new Date().toLocaleTimeString("en-US")}`,
       docId: doc ? doc.id : this.associatedDocId || null,
       messages: [],
       createdAt: timestamp,
@@ -801,7 +805,7 @@ What would you like to explore from your study materials?`;
         : null;
     const makeOptionLabel = (s) => {
       const title = s.title || "Chat";
-      const time = new Date(s.updatedAt || s.createdAt).toLocaleString();
+      const time = new Date(s.updatedAt || s.createdAt).toLocaleString("en-US");
       return `${title}${s.docId ? "" : " (no doc)"} - ${time}`;
     };
     // If doc selected, show its sessions first
@@ -861,24 +865,44 @@ What would you like to explore from your study materials?`;
   }
 
   /**
-   * Clear current chat session
+   * Delete current chat session
    */
-  clearCurrentChat() {
+  deleteCurrentChat() {
     if (!this.currentSession) return;
 
-    if (
-      confirm(
-        "Are you sure you want to clear this chat? This action cannot be undone."
-      )
-    ) {
+    const currentTitle = this.currentSession.title || "當前對話";
+
+    if (confirm(`確定要刪除「${currentTitle}」嗎？此操作無法復原。`)) {
       // Delete from storage
       storageManager.deleteChatSession(this.currentSession.id);
 
-      // Create new session
-      this.createNewSession(true);
+      // Check if there are other sessions available
+      const remainingSessions = storageManager.getChats() || [];
 
-      this.showToast("Chat cleared successfully", "success");
+      if (remainingSessions.length > 0) {
+        // Switch to the most recent remaining session
+        const latestSession = remainingSessions.sort(
+          (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+        )[0];
+        this.currentSession = latestSession;
+        this.messages = latestSession.messages || [];
+        this.associatedDocId = latestSession.docId || null;
+        this.renderMessages();
+        this.refreshSessionSelect();
+      } else {
+        // Create new session if no sessions remain
+        this.createNewSession(true);
+      }
+
+      this.showToast("對話已刪除", "success");
     }
+  }
+
+  /**
+   * Clear current chat session (deprecated - use deleteCurrentChat)
+   */
+  clearCurrentChat() {
+    this.deleteCurrentChat();
   }
 
   /**
@@ -921,10 +945,10 @@ What would you like to explore from your study materials?`;
     let content = `# ${this.currentSession.title}\n\n`;
     content += `*Created: ${new Date(
       this.currentSession.createdAt
-    ).toLocaleString()}*\n`;
+    ).toLocaleString("en-US")}*\n`;
     content += `*Updated: ${new Date(
       this.currentSession.updatedAt
-    ).toLocaleString()}*\n\n`;
+    ).toLocaleString("en-US")}*\n\n`;
 
     if (this.currentSession.docId) {
       const doc = storageManager.getDocument(this.currentSession.docId);
@@ -936,7 +960,7 @@ What would you like to explore from your study materials?`;
     content += `---\n\n`;
 
     this.messages.forEach((message) => {
-      const timestamp = new Date(message.timestamp).toLocaleTimeString();
+      const timestamp = new Date(message.timestamp).toLocaleTimeString("en-US");
 
       if (message.type === "user") {
         content += `**You** *(${timestamp})*: ${message.content}\n\n`;
@@ -954,15 +978,16 @@ What would you like to explore from your study materials?`;
    * Get current document context for AI responses
    */
   getCurrentDocumentContext() {
-    const currentDoc = window.documentEditor && window.documentEditor.getCurrentDocument
-      ? window.documentEditor.getCurrentDocument()
-      : null;
-    
+    const currentDoc =
+      window.documentEditor && window.documentEditor.getCurrentDocument
+        ? window.documentEditor.getCurrentDocument()
+        : null;
+
     if (currentDoc && currentDoc.content) {
       // Return first 1000 characters of document content as context
       return currentDoc.content.substring(0, 1000);
     }
-    
+
     return "No document context available";
   }
 
