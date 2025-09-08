@@ -1,335 +1,450 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI E-Learning Platform - Hong Kong Students</title>
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/responsive.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body>
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/responsive.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
     <!-- Header -->
     <header class="header">
-        <div class="header-content">
-            <div class="logo">
-                <i class="fas fa-graduation-cap"></i>
-                <span>AI E-Learning</span>
-            </div>
-            <nav class="nav">
-                <button class="nav-btn" id="summarizeBtn" title="Summarize uploaded files">
-                    <i class="fas fa-file-text"></i>
-                    <span>Summarize</span>
-                </button>
-                <button class="nav-btn" id="explainBtn" title="Explain uploaded files">
-                    <i class="fas fa-lightbulb"></i>
-                    <span>Explain</span>
-                </button>
-                <button class="nav-btn" id="exerciseBtn" title="Generate exercises">
-                    <i class="fas fa-tasks"></i>
-                    <span>Generate Exercises</span>
-                </button>
-                <button class="nav-btn" id="historyBtn" title="View saved documents">
-                    <i class="fas fa-history"></i>
-                    <span>History</span>
-                </button>
-                <button class="nav-btn" id="settingsBtn" title="AI Settings">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </button>
-            </nav>
+      <div class="header-content">
+        <div class="logo">
+          <i class="fas fa-graduation-cap"></i>
+          <span>AI E-Learning</span>
         </div>
+        <nav class="nav">
+          <button
+            class="nav-btn"
+            id="summarizeBtn"
+            title="Summarize uploaded files"
+          >
+            <i class="fas fa-file-text"></i>
+            <span>Summarize</span>
+          </button>
+          <button
+            class="nav-btn"
+            id="explainBtn"
+            title="Explain uploaded files"
+          >
+            <i class="fas fa-lightbulb"></i>
+            <span>Explain</span>
+          </button>
+          <button class="nav-btn" id="exerciseBtn" title="Generate exercises">
+            <i class="fas fa-tasks"></i>
+            <span>Generate Exercises</span>
+          </button>
+          <button class="nav-btn" id="historyBtn" title="View saved documents">
+            <i class="fas fa-history"></i>
+            <span>History</span>
+          </button>
+          <button class="nav-btn" id="settingsBtn" title="AI Settings">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </button>
+        </nav>
+      </div>
     </header>
 
     <!-- Main Container -->
     <div class="main-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="upload-section">
-                <h3><i class="fas fa-upload"></i> Upload Files</h3>
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-content">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <p>Drag & drop files here or click to browse</p>
-                        <p class="upload-hint">Supports PDF, DOCX, TXT, Images</p>
-                    </div>
-                    <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.gif">
-                </div>
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="upload-section">
+          <h3><i class="fas fa-upload"></i> Upload Files</h3>
+          <div class="upload-area" id="uploadArea">
+            <div class="upload-content">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <p>Drag & drop files here or click to browse</p>
+              <p class="upload-hint">Supports PDF, DOCX, TXT, Images</p>
             </div>
+            <input
+              type="file"
+              id="fileInput"
+              multiple
+              accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.gif"
+            />
+          </div>
+        </div>
 
-            <div class="uploaded-files">
-                <h3><i class="fas fa-folder-open"></i> Uploaded Files</h3>
-                <div class="file-list" id="fileList">
-                    <div class="no-files">
-                        <i class="fas fa-inbox"></i>
-                        <p>No files uploaded yet</p>
-                    </div>
-                </div>
+        <div class="uploaded-files">
+          <h3><i class="fas fa-folder-open"></i> Uploaded Files</h3>
+          <div class="file-list" id="fileList">
+            <div class="no-files">
+              <i class="fas fa-inbox"></i>
+              <p>No files uploaded yet</p>
             </div>
-        </aside>
+          </div>
+        </div>
+      </aside>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <!-- Welcome Screen -->
-            <div class="welcome-screen" id="welcomeScreen">
-                <div class="welcome-content">
-                    <h1>Welcome to AI E-Learning Platform</h1>
-                    <p>Upload your study materials and let AI help you learn more effectively</p>
-                    <div class="feature-cards">
-                        <div class="feature-card">
-                            <i class="fas fa-file-text"></i>
-                            <h3>Summarize</h3>
-                            <p>Get comprehensive summaries of your study materials with proper citations</p>
-                        </div>
-                        <div class="feature-card">
-                            <i class="fas fa-lightbulb"></i>
-                            <h3>Explain</h3>
-                            <p>Get detailed explanations of complex topics tailored for beginners</p>
-                        </div>
-                        <div class="feature-card">
-                            <i class="fas fa-tasks"></i>
-                            <h3>Generate Exercises</h3>
-                            <p>Create practice questions and exercises based on your materials</p>
-                        </div>
-                    </div>
-                </div>
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <!-- Welcome Screen -->
+        <div class="welcome-screen" id="welcomeScreen">
+          <div class="welcome-content">
+            <h1>Welcome to AI E-Learning Platform</h1>
+            <p>
+              Upload your study materials and let AI help you learn more
+              effectively
+            </p>
+            <div class="feature-cards">
+              <div class="feature-card">
+                <i class="fas fa-file-text"></i>
+                <h3>Summarize</h3>
+                <p>
+                  Get comprehensive summaries of your study materials with
+                  proper citations
+                </p>
+              </div>
+              <div class="feature-card">
+                <i class="fas fa-lightbulb"></i>
+                <h3>Explain</h3>
+                <p>
+                  Get detailed explanations of complex topics tailored for
+                  beginners
+                </p>
+              </div>
+              <div class="feature-card">
+                <i class="fas fa-tasks"></i>
+                <h3>Generate Exercises</h3>
+                <p>
+                  Create practice questions and exercises based on your
+                  materials
+                </p>
+              </div>
             </div>
+          </div>
+        </div>
 
-            <!-- Document Viewer/Editor -->
-            <div class="document-container" id="documentContainer" style="display: none;">
-                <div class="document-header">
-                    <div class="document-title">
-                        <h2 id="documentTitle">Document Title</h2>
-                        <span class="document-type" id="documentType">Summary</span>
-                    </div>
-                    <div class="document-actions">
-                        <button class="action-btn" id="editBtn" title="Edit document">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="action-btn" id="exportDocxBtn" title="Export to DOCX">
-                            <i class="fas fa-file-word"></i>
-                        </button>
-                        <button class="action-btn" id="exportPdfBtn" title="Export to PDF">
-                            <i class="fas fa-file-pdf"></i>
-                        </button>
-                        <button class="action-btn" id="saveBtn" title="Save document">
-                            <i class="fas fa-save"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="document-content" id="documentContent" contenteditable="false">
-                    <!-- Generated content will be displayed here -->
-                </div>
+        <!-- Document Viewer/Editor -->
+        <div
+          class="document-container"
+          id="documentContainer"
+          style="display: none"
+        >
+          <div class="document-header">
+            <div class="document-title">
+              <h2 id="documentTitle">Document Title</h2>
+              <span class="document-type" id="documentType">Summary</span>
             </div>
+            <div class="document-actions">
+              <button class="action-btn" id="editBtn" title="Edit document">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button
+                class="action-btn"
+                id="exportDocxBtn"
+                title="Export to DOCX"
+              >
+                <i class="fas fa-file-word"></i>
+              </button>
+              <button
+                class="action-btn"
+                id="exportPdfBtn"
+                title="Export to PDF"
+              >
+                <i class="fas fa-file-pdf"></i>
+              </button>
+              <button class="action-btn" id="saveBtn" title="Save document">
+                <i class="fas fa-save"></i>
+              </button>
+            </div>
+          </div>
 
-            <!-- Exercise Generation Options -->
-            <div class="exercise-options" id="exerciseOptions" style="display: none;">
-                <h3>Choose Exercise Type</h3>
-                <div class="exercise-types">
-                    <button class="exercise-type-btn" data-type="multiple-choice">
-                        <i class="fas fa-list-ul"></i>
-                        <span>Multiple Choice</span>
-                    </button>
-                    <button class="exercise-type-btn" data-type="short-answer">
-                        <i class="fas fa-pen"></i>
-                        <span>Short Questions</span>
-                    </button>
-                    <button class="exercise-type-btn" data-type="long-answer">
-                        <i class="fas fa-file-alt"></i>
-                        <span>Long Questions</span>
-                    </button>
-                    <button class="exercise-type-btn" data-type="essay">
-                        <i class="fas fa-scroll"></i>
-                        <span>Essay Questions</span>
-                    </button>
-                </div>
-                <div class="exercise-settings">
-                    <label for="questionCount">Number of Questions:</label>
-                    <input type="number" id="questionCount" min="1" max="20" value="5">
-                    <button class="generate-btn" id="generateExerciseBtn">Generate Exercises</button>
-                </div>
-            </div>
+          <div
+            class="document-content"
+            id="documentContent"
+            contenteditable="false"
+          >
+            <!-- Generated content will be displayed here -->
+          </div>
+        </div>
 
-            <!-- Topic Selection for Explanation -->
-            <div class="topic-selection" id="topicSelection" style="display: none;">
-                <h3>Select Topic to Explain</h3>
-                <div class="topic-list" id="topicList">
-                    <!-- Topics will be dynamically generated -->
-                </div>
-                <button class="explain-all-btn" id="explainAllBtn">Explain Entire Document</button>
-            </div>
-        </main>
+        <!-- Exercise Generation Options -->
+        <div
+          class="exercise-options"
+          id="exerciseOptions"
+          style="display: none"
+        >
+          <h3>Choose Exercise Type</h3>
+          <div class="exercise-types">
+            <button class="exercise-type-btn" data-type="multiple-choice">
+              <i class="fas fa-list-ul"></i>
+              <span>Multiple Choice</span>
+            </button>
+            <button class="exercise-type-btn" data-type="short-answer">
+              <i class="fas fa-pen"></i>
+              <span>Short Questions</span>
+            </button>
+            <button class="exercise-type-btn" data-type="long-answer">
+              <i class="fas fa-file-alt"></i>
+              <span>Long Questions</span>
+            </button>
+            <button class="exercise-type-btn" data-type="essay">
+              <i class="fas fa-scroll"></i>
+              <span>Essay Questions</span>
+            </button>
+          </div>
+          <div class="exercise-settings">
+            <label for="questionCount">Number of Questions:</label>
+            <input
+              type="number"
+              id="questionCount"
+              min="1"
+              max="20"
+              value="5"
+            />
+            <button class="generate-btn" id="generateExerciseBtn">
+              Generate Exercises
+            </button>
+          </div>
+        </div>
 
-        <!-- Chat Panel -->
-        <aside class="chat-panel" id="chatPanel">
-            <div class="chat-header">
-                <h3><i class="fas fa-comments"></i> AI Assistant</h3>
-                <div class="chat-controls">
-                    <select id="chatSessionSelect" class="chat-session-select" title="Switch Chat Session">
-                        <!-- Options will be populated dynamically -->
-                    </select>
-                    <button class="new-chat-btn" id="newChatBtn" title="Start New Chat">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                    <button class="clear-chat-btn" id="clearChatBtn" title="Clear Current Chat">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                    <button class="close-chat" id="closeChatBtn">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
+        <!-- Topic Selection for Explanation -->
+        <div class="topic-selection" id="topicSelection" style="display: none">
+          <h3>Select Topic to Explain</h3>
+          <div class="topic-list" id="topicList">
+            <!-- Topics will be dynamically generated -->
+          </div>
+          <button class="explain-all-btn" id="explainAllBtn">
+            Explain Entire Document
+          </button>
+        </div>
+      </main>
+
+      <!-- Chat Panel -->
+      <aside class="chat-panel" id="chatPanel">
+        <div class="chat-header">
+          <h3><i class="fas fa-comments"></i> AI Assistant</h3>
+          <div class="chat-controls">
+            <select
+              id="chatSessionSelect"
+              class="chat-session-select"
+              title="Switch Chat Session"
+            >
+              <!-- Options will be populated dynamically -->
+            </select>
+            <button class="new-chat-btn" id="newChatBtn" title="Start New Chat">
+              <i class="fas fa-plus"></i>
+            </button>
+            <button
+              class="clear-chat-btn"
+              id="clearChatBtn"
+              title="Clear Current Chat"
+            >
+              <i class="fas fa-trash"></i>
+            </button>
+            <button class="close-chat" id="closeChatBtn">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-message ai-message">
+            <div class="message-content">
+              <p>
+                Hello! I'm your AI learning assistant. Select any text in your
+                document and ask me questions about it!
+              </p>
             </div>
-            <div class="chat-messages" id="chatMessages">
-                <div class="chat-message ai-message">
-                    <div class="message-content">
-                        <p>Hello! I'm your AI learning assistant. Select any text in your document and ask me questions about it!</p>
-                    </div>
-                    <div class="message-time">Just now</div>
-                </div>
-            </div>
-            <div class="chat-input-container">
-                <input type="text" id="chatInput" placeholder="Ask a question about the selected text...">
-                <button id="sendChatBtn">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
-        </aside>
+            <div class="message-time">Just now</div>
+          </div>
+        </div>
+        <div class="chat-input-container">
+          <input
+            type="text"
+            id="chatInput"
+            placeholder="Ask a question about the selected text..."
+          />
+          <button id="sendChatBtn">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </aside>
     </div>
 
     <!-- Floating Action Bubble -->
-    <div class="floating-bubble" id="floatingBubble" style="display: none;">
-        <button class="bubble-btn" id="copyBtn" title="Copy">
-            <i class="fas fa-copy"></i>
-        </button>
-        <button class="bubble-btn" id="cutBtn" title="Cut">
-            <i class="fas fa-cut"></i>
-        </button>
-        <button class="bubble-btn" id="pasteBtn" title="Paste">
-            <i class="fas fa-paste"></i>
-        </button>
-        <button class="bubble-btn" id="askFollowupBtn" title="Ask Follow-up">
-            <i class="fas fa-question-circle"></i>
-        </button>
+    <div class="floating-bubble" id="floatingBubble" style="display: none">
+      <button class="bubble-btn" id="copyBtn" title="Copy">
+        <i class="fas fa-copy"></i>
+      </button>
+      <button class="bubble-btn" id="cutBtn" title="Cut">
+        <i class="fas fa-cut"></i>
+      </button>
+      <button class="bubble-btn" id="pasteBtn" title="Paste">
+        <i class="fas fa-paste"></i>
+      </button>
+      <button class="bubble-btn" id="askFollowupBtn" title="Ask Follow-up">
+        <i class="fas fa-question-circle"></i>
+      </button>
     </div>
 
     <!-- File Preview Modal -->
     <div class="modal" id="filePreviewModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="previewTitle">File Preview</h3>
-                <button class="close-modal" id="closePreviewBtn">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body" id="previewContent">
-                <!-- File preview content -->
-            </div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="previewTitle">File Preview</h3>
+          <button class="close-modal" id="closePreviewBtn">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
+        <div class="modal-body" id="previewContent">
+          <!-- File preview content -->
+        </div>
+      </div>
     </div>
 
     <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
-        <div class="loading-content">
-            <div class="spinner"></div>
-            <p id="loadingText">Processing your files...</p>
-        </div>
+    <div class="loading-overlay" id="loadingOverlay" style="display: none">
+      <div class="loading-content">
+        <div class="spinner"></div>
+        <p id="loadingText">Processing your files...</p>
+      </div>
     </div>
 
     <!-- Solution Blur Overlay -->
-    <div class="solution-overlay" id="solutionOverlay" style="display: none;">
-        <div class="blur-content">
-            <i class="fas fa-eye-slash"></i>
-            <h3>Solution Hidden</h3>
-            <p>Click to reveal the suggested solutions</p>
-            <button class="reveal-btn" id="revealSolutionBtn">Reveal Solutions</button>
-        </div>
+    <div class="solution-overlay" id="solutionOverlay" style="display: none">
+      <div class="blur-content">
+        <i class="fas fa-eye-slash"></i>
+        <h3>Solution Hidden</h3>
+        <p>Click to reveal the suggested solutions</p>
+        <button class="reveal-btn" id="revealSolutionBtn">
+          Reveal Solutions
+        </button>
+      </div>
     </div>
 
     <!-- AI Settings Modal -->
-    <div class="modal" id="aiSettingsModal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-robot"></i> AI Settings</h3>
-                <button class="close-modal" id="closeSettingsBtn">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="settings-section">
-                    <h4>AI Mode</h4>
-                    <div class="ai-mode-toggle">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="realAIToggle">
-                            <span class="slider"></span>
-                        </label>
-                        <div class="toggle-labels">
-                            <span class="mode-label" id="currentMode">Simulated AI</span>
-                            <p class="mode-description" id="modeDescription">Using simulated AI responses for testing</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="settings-section" id="apiKeySection" style="display: none;">
-                    <h4>OpenRouter API Configuration</h4>
-                    <div class="api-config">
-                        <label for="apiKeyInput">API Key:</label>
-                        <div class="api-key-input-group">
-                            <input type="password" id="apiKeyInput" placeholder="Enter your OpenRouter API key">
-                            <button type="button" id="toggleApiKeyVisibility" title="Show/Hide API Key">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                        <p class="api-help">
-                            <i class="fas fa-info-circle"></i>
-                            Get your API key from <a href="https://openrouter.ai" target="_blank">OpenRouter.ai</a>
-                        </p>
-
-                        <div class="model-select-group">
-                            <label for="modelSelect">Model:</label>
-                            <select id="modelSelect">
-                                <option value="google/gemini-2.5-pro">google/gemini-2.5-pro</option>
-                                <option value="openai/gpt-5">openai/gpt-5</option>
-                                <option value="anthropic/claude-sonnet-4">anthropic/claude-sonnet-4</option>
-                                <option value="deepseek/deepseek-chat-v3.1">deepseek/deepseek-chat-v3.1</option>
-                                <option value="deepseek/deepseek-chat-v3.1:free">deepseek/deepseek-chat-v3.1:free</option>
-                                <option value="__other__">Other...</option>
-                            </select>
-                        </div>
-
-                        <div class="custom-model-input-group" id="customModelGroup" style="display: none;">
-                            <label for="customModelInput">Custom Model ID:</label>
-                            <input type="text" id="customModelInput" placeholder="Enter a model id e.g. provider/model:variant">
-                        </div>
-
-                        <div class="api-status" id="apiStatus">
-                            <i class="fas fa-circle"></i>
-                            <span>Not configured</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-section">
-                    <h4>Model Information</h4>
-                    <div class="model-info">
-                        <p><strong>Model:</strong> <span id="modelInfoName">google/gemini-2.5-pro</span></p>
-                        <p><strong>Provider:</strong> OpenRouter</p>
-                        <p><strong>Features:</strong> Text generation, document analysis, exercise creation</p>
-                    </div>
-                </div>
-
-                <div class="settings-actions">
-                    <button class="btn-secondary" id="testConnectionBtn" disabled>
-                        <i class="fas fa-plug"></i>
-                        Test Connection
-                    </button>
-                    <button class="btn-primary" id="saveSettingsBtn">
-                        <i class="fas fa-save"></i>
-                        Save Settings
-                    </button>
-                </div>
-            </div>
+    <div class="modal" id="aiSettingsModal" style="display: none">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-robot"></i> AI Settings</h3>
+          <button class="close-modal" id="closeSettingsBtn">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
+        <div class="modal-body">
+          <div class="settings-section">
+            <h4>AI Mode</h4>
+            <div class="ai-mode-toggle">
+              <label class="toggle-switch">
+                <input type="checkbox" id="realAIToggle" />
+                <span class="slider"></span>
+              </label>
+              <div class="toggle-labels">
+                <span class="mode-label" id="currentMode">Simulated AI</span>
+                <p class="mode-description" id="modeDescription">
+                  Using simulated AI responses for testing
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="settings-section"
+            id="apiKeySection"
+            style="display: none"
+          >
+            <h4>OpenRouter API Configuration</h4>
+            <div class="api-config">
+              <label for="apiKeyInput">API Key:</label>
+              <div class="api-key-input-group">
+                <input
+                  type="password"
+                  id="apiKeyInput"
+                  placeholder="Enter your OpenRouter API key"
+                />
+                <button
+                  type="button"
+                  id="toggleApiKeyVisibility"
+                  title="Show/Hide API Key"
+                >
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+              <p class="api-help">
+                <i class="fas fa-info-circle"></i>
+                Get your API key from
+                <a href="https://openrouter.ai" target="_blank"
+                  >OpenRouter.ai</a
+                >
+              </p>
+
+              <div class="model-select-group">
+                <label for="modelSelect">Model:</label>
+                <select id="modelSelect">
+                  <option value="google/gemini-2.5-pro">
+                    google/gemini-2.5-pro
+                  </option>
+                  <option value="openai/gpt-5">openai/gpt-5</option>
+                  <option value="anthropic/claude-sonnet-4">
+                    anthropic/claude-sonnet-4
+                  </option>
+                  <option value="deepseek/deepseek-chat-v3.1">
+                    deepseek/deepseek-chat-v3.1
+                  </option>
+                  <option value="deepseek/deepseek-chat-v3.1:free">
+                    deepseek/deepseek-chat-v3.1:free
+                  </option>
+                  <option value="__other__">Other...</option>
+                </select>
+              </div>
+
+              <div
+                class="custom-model-input-group"
+                id="customModelGroup"
+                style="display: none"
+              >
+                <label for="customModelInput">Custom Model ID:</label>
+                <input
+                  type="text"
+                  id="customModelInput"
+                  placeholder="Enter a model id e.g. provider/model:variant"
+                />
+              </div>
+
+              <div class="api-status" id="apiStatus">
+                <i class="fas fa-circle"></i>
+                <span>Not configured</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h4>Model Information</h4>
+            <div class="model-info">
+              <p>
+                <strong>Model:</strong>
+                <span id="modelInfoName">google/gemini-2.5-pro</span>
+              </p>
+              <p><strong>Provider:</strong> OpenRouter</p>
+              <p>
+                <strong>Features:</strong> Text generation, document analysis,
+                exercise creation
+              </p>
+            </div>
+          </div>
+
+          <div class="settings-actions">
+            <button class="btn-secondary" id="testConnectionBtn" disabled>
+              <i class="fas fa-plug"></i>
+              Test Connection
+            </button>
+            <button class="btn-primary" id="saveSettingsBtn">
+              <i class="fas fa-save"></i>
+              Save Settings
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Scripts -->
@@ -346,5 +461,5 @@
     <script src="js/chatInterface.js"></script>
     <script src="js/export.js"></script>
     <script src="js/app.js"></script>
-</body>
+  </body>
 </html>
